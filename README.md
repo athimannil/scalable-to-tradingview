@@ -1,36 +1,131 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Scalable Capital to TradingView Converter
+
+A Next.js web application that converts Scalable Capital transaction CSV exports to TradingView portfolio import format.
+
+## Features
+
+- **File Upload**: Upload your Scalable Capital CSV file directly in the browser
+- **ISIN Resolution**: Automatically resolves ISINs to German exchange ticker symbols using the OpenFIGI API
+- **Smart Conversion**: Maps transaction types (Buy, Sell, Dividend, etc.) to TradingView format
+- **Preview**: Review converted transactions before downloading
+- **Error Handling**: Clear reporting of skipped transactions and conversion errors
+- **Privacy**: All CSV processing happens client-side (except ISIN resolution via API)
+
+## Supported Exchanges
+
+The converter attempts to resolve ISINs to the following German exchanges in order:
+
+1. XETR (Xetra)
+2. TRADEGATE
+3. GETTEX (Munich)
+4. FRA (Frankfurt)
+5. SWB (Stuttgart)
+6. HAM (Hamburg)
+7. QUOTRIX
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm, yarn, pnpm, or bun
+
+### Installation
+
+```bash
+npm install
+```
+
+### Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to use the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Testing
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm test           # Run tests in watch mode
+npm run test:run   # Run tests once
+npm run test:coverage  # Run tests with coverage
+```
 
-## Learn More
+### Build
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Usage
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Export your transaction history from Scalable Capital as CSV
+2. (Optional) Enter your [OpenFIGI API key](https://www.openfigi.com/api) for higher rate limits
+3. Upload the CSV file
+4. Review the converted transactions in the preview table
+5. Download the TradingView-compatible CSV file
+6. Import the file into your TradingView portfolio
 
-## Deploy on Vercel
+## API Rate Limits
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Without API key**: ~20 requests per minute
+- **With API key**: ~250 requests per minute
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Get a free API key at [OpenFIGI](https://www.openfigi.com/api).
+
+## Transaction Type Mapping
+
+| Scalable Capital  | TradingView    |
+| ----------------- | -------------- |
+| Buy               | Buy            |
+| Sell              | Sell           |
+| Dividend          | Dividend       |
+| Deposit           | Deposit        |
+| Withdrawal        | Withdrawal     |
+| Tax/Fee           | Taxes and fees |
+| Security Transfer | _Skipped_      |
+
+## TradingView CSV Format
+
+The generated CSV follows TradingView's portfolio import format:
+
+```
+Symbol,Side,Qty,Fill Price,Commission,Closing Time
+XETR:4COP,Buy,10,48.33,0.99,2025-12-30 13:41:40
+XETR:COPM,Sell,100,7.682,,2025-12-22 14:14:58
+$CASH,Deposit,5000,,,2024-08-24 0:00:00
+```
+
+## Tech Stack
+
+- [Next.js 16](https://nextjs.org/)
+- [React 19](https://react.dev/)
+- [Tailwind CSS 4](https://tailwindcss.com/)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [PapaParse](https://www.papaparse.com/) for CSV parsing
+- [OpenFIGI API](https://www.openfigi.com/) for ISIN resolution
+- [Vitest](https://vitest.dev/) for testing
+
+## Project Structure
+
+```
+app/
+├── api/
+│   └── resolve-isin/
+│       └── route.ts          # API route for ISIN resolution
+├── components/
+│   └── CsvConverter.tsx      # Main converter UI component
+├── lib/
+│   ├── __tests__/            # Unit tests
+│   ├── csv-generator.ts      # TradingView CSV generation
+│   ├── csv-parser.ts         # Scalable Capital CSV parsing
+│   ├── openfigi.ts           # OpenFIGI API client
+│   └── types.ts              # TypeScript type definitions
+├── page.tsx                  # Main page
+└── layout.tsx                # App layout
+```
+
+## License
+
+MIT
