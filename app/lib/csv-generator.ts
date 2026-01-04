@@ -12,6 +12,7 @@ import {
   ConversionError,
   SkippedTransaction,
   ResolvedSymbol,
+  ConversionMode,
 } from './types';
 
 /**
@@ -20,6 +21,7 @@ import {
 const TYPE_MAPPING: Record<string, TradingViewSide | null> = {
   buy: 'Buy',
   sell: 'Sell',
+  'savings plan': 'Buy', // Recurring purchases of fractional shares
   dividend: 'Dividend',
   withdrawal: 'Withdrawal',
   deposit: 'Deposit',
@@ -29,6 +31,7 @@ const TYPE_MAPPING: Record<string, TradingViewSide | null> = {
   // Skip these types
   'security transfer': null,
   transfer: null,
+  'corporate action': null, // Stock splits, mergers, etc.
 };
 
 /**
@@ -80,11 +83,113 @@ function parseEuropeanNumber(value: string): number {
 }
 
 /**
+ * Aggregate a group of transactions into a single transaction
+ * Uses weighted average for price based on quantity
+ */
+function aggregateGroup(
+  group: TradingViewTransaction[]
+): TradingViewTransaction {
+  if (group.length === 0) {
+    throw new Error('Cannot aggregate empty group');
+  }
+
+  if (group.length === 1) {
+    return group[0];
+  }
+
+  let totalQty = 0;
+  let totalValue = 0;
+  let totalCommission = 0;
+
+  for (const tx of group) {
+    const qty = parseFloat(tx.Qty) || 0;
+    const price = parseFloat(tx['Fill Price']) || 0;
+    const commission = parseFloat(tx.Commission) || 0;
+
+    totalQty += qty;
+    totalValue += qty * price;
+    totalCommission += commission;
+  }
+
+  const avgPrice = totalQty > 0 ? totalValue / totalQty : 0;
+
+  // Use the last transaction's closing time
+  const lastTx = group[group.length - 1];
+
+  return {
+    Symbol: group[0].Symbol,
+    Side: group[0].Side,
+    Qty: totalQty > 0 ? totalQty.toString() : '',
+    'Fill Price': avgPrice > 0 ? avgPrice.toString() : '',
+    Commission: totalCommission > 0 ? totalCommission.toString() : '',
+    'Closing Time': lastTx['Closing Time'],
+  };
+}
+
+/**
+ * Aggregate consecutive transactions of the same type and symbol
+ * Takes the average price weighted by quantity
+ */
+function aggregateTransactions(
+  transactions: TradingViewTransaction[]
+): TradingViewTransaction[] {
+  if (transactions.length === 0) return [];
+
+  const result: TradingViewTransaction[] = [];
+  let currentGroup: TradingViewTransaction[] = [];
+  let currentSymbol: string | null = null;
+  let currentSide: TradingViewSide | null = null;
+
+  const flushGroup = () => {
+    if (currentGroup.length === 0) return;
+
+    if (currentGroup.length === 1) {
+      result.push(currentGroup[0]);
+    } else {
+      // Aggregate the group
+      const aggregated = aggregateGroup(currentGroup);
+      result.push(aggregated);
+    }
+    currentGroup = [];
+  };
+
+  for (const tx of transactions) {
+    const isTradeable = ['Buy', 'Sell'].includes(tx.Side);
+
+    if (isTradeable) {
+      // Check if this transaction belongs to the current group
+      if (tx.Symbol === currentSymbol && tx.Side === currentSide) {
+        currentGroup.push(tx);
+      } else {
+        // Flush the previous group and start a new one
+        flushGroup();
+        currentSymbol = tx.Symbol;
+        currentSide = tx.Side;
+        currentGroup = [tx];
+      }
+    } else {
+      // Non-tradeable transactions (Deposit, Withdrawal, Dividend, etc.)
+      // Flush any existing group and add this transaction directly
+      flushGroup();
+      currentSymbol = null;
+      currentSide = null;
+      result.push(tx);
+    }
+  }
+
+  // Flush any remaining group
+  flushGroup();
+
+  return result;
+}
+
+/**
  * Convert Scalable Capital transactions to TradingView format
  */
 export function convertTransactions(
   transactions: ScalableTransaction[],
-  symbolMap: Map<string, ResolvedSymbol | null>
+  symbolMap: Map<string, ResolvedSymbol | null>,
+  mode: ConversionMode = 'detailed'
 ): ConversionResult {
   const result: TradingViewTransaction[] = [];
   const errors: ConversionError[] = [];
@@ -182,8 +287,12 @@ export function convertTransactions(
     result.push(tradingViewTx);
   });
 
+  // Apply aggregation if mode is 'aggregated'
+  const finalTransactions =
+    mode === 'aggregated' ? aggregateTransactions(result) : result;
+
   return {
-    transactions: result,
+    transactions: finalTransactions,
     errors,
     skipped,
   };

@@ -144,3 +144,10 @@ export const EXCHANGE_PRIORITY = [
 ] as const;
 
 export type ExchangeCode = (typeof EXCHANGE_PRIORITY)[number];
+
+/**
+ * Conversion mode options
+ * - detailed: Each transaction is converted individually
+ * - aggregated: Consecutive buy/sell transactions are averaged into single entries
+ */
+export type ConversionMode = 'detailed' | 'aggregated';

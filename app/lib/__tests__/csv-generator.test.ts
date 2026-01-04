@@ -75,12 +75,48 @@ describe('convertTransactions', () => {
     expect(result.transactions[0]['Fill Price']).toBe('7.682');
   });
 
+  it('should convert savings plan transactions as Buy', () => {
+    const transactions = [
+      createTransaction({
+        type: 'Savings plan',
+        shares: '4,329',
+        price: '23,10',
+        amount: '-99,9999',
+        fee: '0,00',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap);
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Side).toBe('Buy');
+    expect(result.transactions[0].Qty).toBe('4.329');
+    expect(result.transactions[0]['Fill Price']).toBe('23.1');
+  });
+
   it('should skip security transfers', () => {
     const transactions = [
       createTransaction({
         type: 'Security transfer',
         fee: '',
         tax: '',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap);
+
+    expect(result.transactions).toHaveLength(0);
+    expect(result.skipped).toHaveLength(1);
+    expect(result.skipped[0].reason).toContain('not supported');
+  });
+
+  it('should skip corporate actions', () => {
+    const transactions = [
+      createTransaction({
+        type: 'Corporate action',
+        shares: '10',
+        price: '0,00',
+        amount: '0,00',
       }),
     ];
 
@@ -275,5 +311,242 @@ describe('generateTradingViewCsv', () => {
 
     // Should match format: Symbol,Side,Qty,Fill Price,Commission,Closing Time
     expect(csv).toContain('XETR:4COP,Buy,10,217,0,2024-09-17 0:00:00');
+  });
+});
+
+describe('convertTransactions with aggregation mode', () => {
+  const createTransaction = (
+    overrides: Partial<ScalableTransaction> = {}
+  ): ScalableTransaction => ({
+    date: '2024-01-15',
+    time: '10:30:00',
+    status: 'Executed',
+    reference: 'REF001',
+    description: 'Test Stock',
+    assetType: 'Security',
+    type: 'Buy',
+    isin: 'IE0003Z9E2Y3',
+    shares: '10',
+    price: '25,50',
+    amount: '-255,00',
+    fee: '0,99',
+    tax: '0,00',
+    currency: 'EUR',
+    ...overrides,
+  });
+
+  const symbolMap = new Map<string, ResolvedSymbol | null>([
+    [
+      'IE0003Z9E2Y3',
+      { ticker: '4COP', exchange: 'XETR', fullSymbol: 'XETR:4COP' },
+    ],
+    [
+      'IE00063FT9K6',
+      { ticker: 'COPM', exchange: 'XETR', fullSymbol: 'XETR:COPM' },
+    ],
+  ]);
+
+  it('should aggregate consecutive buy transactions', () => {
+    const transactions = [
+      createTransaction({ shares: '10', price: '5,00' }),
+      createTransaction({ shares: '20', price: '6,00' }),
+      createTransaction({ shares: '30', price: '7,00' }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap, 'aggregated');
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Side).toBe('Buy');
+    expect(result.transactions[0].Qty).toBe('60');
+    // Weighted average: (10*5 + 20*6 + 30*7) / 60 = 380 / 60 = 6.333...
+    expect(parseFloat(result.transactions[0]['Fill Price'])).toBeCloseTo(
+      6.333,
+      2
+    );
+  });
+
+  it('should aggregate consecutive sell transactions', () => {
+    const transactions = [
+      createTransaction({ type: 'Sell', shares: '15', price: '8,00' }),
+      createTransaction({ type: 'Sell', shares: '25', price: '9,00' }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap, 'aggregated');
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Side).toBe('Sell');
+    expect(result.transactions[0].Qty).toBe('40');
+    // Weighted average: (15*8 + 25*9) / 40 = 345 / 40 = 8.625
+    expect(parseFloat(result.transactions[0]['Fill Price'])).toBeCloseTo(
+      8.625,
+      2
+    );
+  });
+
+  it('should separate buy and sell sequences', () => {
+    const transactions = [
+      createTransaction({ shares: '10', price: '5,00', date: '2024-01-01' }),
+      createTransaction({ shares: '20', price: '6,00', date: '2024-01-02' }),
+      createTransaction({ shares: '30', price: '7,00', date: '2024-01-03' }),
+      createTransaction({
+        type: 'Sell',
+        shares: '15',
+        price: '8,00',
+        date: '2024-01-04',
+      }),
+      createTransaction({
+        type: 'Sell',
+        shares: '25',
+        price: '9,00',
+        date: '2024-01-05',
+      }),
+      createTransaction({ shares: '10', price: '65,00', date: '2024-01-06' }),
+      createTransaction({
+        type: 'Sell',
+        shares: '20',
+        price: '8,50',
+        date: '2024-01-07',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap, 'aggregated');
+
+    expect(result.transactions).toHaveLength(4);
+
+    // First aggregated buy (10@5 + 20@6 + 30@7)
+    expect(result.transactions[0].Side).toBe('Buy');
+    expect(result.transactions[0].Qty).toBe('60');
+    expect(parseFloat(result.transactions[0]['Fill Price'])).toBeCloseTo(
+      6.333,
+      2
+    );
+
+    // First aggregated sell (15@8 + 25@9)
+    expect(result.transactions[1].Side).toBe('Sell');
+    expect(result.transactions[1].Qty).toBe('40');
+    expect(parseFloat(result.transactions[1]['Fill Price'])).toBeCloseTo(
+      8.625,
+      2
+    );
+
+    // Single buy
+    expect(result.transactions[2].Side).toBe('Buy');
+    expect(result.transactions[2].Qty).toBe('10');
+    expect(result.transactions[2]['Fill Price']).toBe('65');
+
+    // Single sell
+    expect(result.transactions[3].Side).toBe('Sell');
+    expect(result.transactions[3].Qty).toBe('20');
+    expect(result.transactions[3]['Fill Price']).toBe('8.5');
+  });
+
+  it('should not aggregate transactions for different symbols', () => {
+    const transactions = [
+      createTransaction({
+        isin: 'IE0003Z9E2Y3',
+        shares: '10',
+        price: '5,00',
+      }),
+      createTransaction({
+        isin: 'IE00063FT9K6',
+        shares: '20',
+        price: '6,00',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap, 'aggregated');
+
+    expect(result.transactions).toHaveLength(2);
+    expect(result.transactions[0].Symbol).toBe('XETR:4COP');
+    expect(result.transactions[1].Symbol).toBe('XETR:COPM');
+  });
+
+  it('should not aggregate non-tradeable transactions', () => {
+    const transactions = [
+      createTransaction({
+        type: 'Deposit',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '1000,00',
+      }),
+      createTransaction({
+        type: 'Deposit',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '2000,00',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, new Map(), 'aggregated');
+
+    expect(result.transactions).toHaveLength(2);
+    expect(result.transactions[0].Side).toBe('Deposit');
+    expect(result.transactions[1].Side).toBe('Deposit');
+  });
+
+  it('should sum commissions when aggregating', () => {
+    const transactions = [
+      createTransaction({
+        shares: '10',
+        price: '5,00',
+        fee: '1,00',
+        tax: '0,50',
+      }),
+      createTransaction({
+        shares: '20',
+        price: '6,00',
+        fee: '2,00',
+        tax: '1,00',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap, 'aggregated');
+
+    expect(result.transactions).toHaveLength(1);
+    // Total commission: (1+0.5) + (2+1) = 4.5
+    expect(result.transactions[0].Commission).toBe('4.5');
+  });
+
+  it('should return detailed transactions when mode is detailed', () => {
+    const transactions = [
+      createTransaction({ shares: '10', price: '5,00' }),
+      createTransaction({ shares: '20', price: '6,00' }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap, 'detailed');
+
+    expect(result.transactions).toHaveLength(2);
+    expect(result.transactions[0].Qty).toBe('10');
+    expect(result.transactions[1].Qty).toBe('20');
+  });
+
+  it('should use last transaction closing time for aggregated group', () => {
+    const transactions = [
+      createTransaction({
+        shares: '10',
+        price: '5,00',
+        date: '2024-01-01',
+        time: '10:00:00',
+      }),
+      createTransaction({
+        shares: '20',
+        price: '6,00',
+        date: '2024-01-02',
+        time: '11:00:00',
+      }),
+      createTransaction({
+        shares: '30',
+        price: '7,00',
+        date: '2024-01-03',
+        time: '12:00:00',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap, 'aggregated');
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0]['Closing Time']).toBe('2024-01-03 12:00:00');
   });
 });

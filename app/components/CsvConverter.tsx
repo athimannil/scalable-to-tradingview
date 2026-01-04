@@ -32,6 +32,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
 import { parseScalableCsv, extractUniqueIsins } from '@/app/lib/csv-parser';
 import {
   convertTransactions,
@@ -43,6 +44,7 @@ import {
   ConversionError,
   SkippedTransaction,
   ResolvedSymbol,
+  ConversionMode,
 } from '@/app/lib/types';
 
 type ConversionStatus =
@@ -59,6 +61,8 @@ export function CsvConverter() {
   const [status, setStatus] = useState<ConversionStatus>('idle');
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState('');
+  const [conversionMode, setConversionMode] =
+    useState<ConversionMode>('detailed');
 
   const [, setOriginalTransactions] = useState<ScalableTransaction[]>([]);
   const [convertedTransactions, setConvertedTransactions] = useState<
@@ -153,7 +157,11 @@ export function CsvConverter() {
       setStatus('converting');
       setProgressMessage('Converting transactions...');
 
-      const conversionResult = convertTransactions(transactions, symbolMap);
+      const conversionResult = convertTransactions(
+        transactions,
+        symbolMap,
+        conversionMode
+      );
 
       setConvertedTransactions(conversionResult.transactions);
       setConversionErrors(conversionResult.errors);
@@ -168,7 +176,7 @@ export function CsvConverter() {
         error instanceof Error ? error.message : 'An unexpected error occurred',
       ]);
     }
-  }, [file, apiKey]);
+  }, [file, apiKey, conversionMode]);
 
   const handleDownload = useCallback(() => {
     if (convertedTransactions.length === 0) return;
@@ -234,6 +242,53 @@ export function CsvConverter() {
                 Get a free API key
               </a>
             </p>
+          </div>
+
+          {/* Conversion Mode Toggle */}
+          <div className="rounded-lg border bg-zinc-50 p-4 dark:bg-zinc-900">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label
+                  htmlFor="conversion-mode"
+                  className="text-base font-medium"
+                >
+                  Conversion Mode
+                </Label>
+                <p className="text-sm text-zinc-500">
+                  {conversionMode === 'detailed'
+                    ? 'Each transaction is converted individually'
+                    : 'Consecutive buy/sell transactions are averaged into single entries'}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span
+                  className={`text-sm ${conversionMode === 'detailed' ? 'font-medium text-zinc-900 dark:text-zinc-50' : 'text-zinc-500'}`}
+                >
+                  Detailed
+                </span>
+                <Switch
+                  id="conversion-mode"
+                  checked={conversionMode === 'aggregated'}
+                  onCheckedChange={(checked) =>
+                    setConversionMode(checked ? 'aggregated' : 'detailed')
+                  }
+                  disabled={isProcessing}
+                />
+                <span
+                  className={`text-sm ${conversionMode === 'aggregated' ? 'font-medium text-zinc-900 dark:text-zinc-50' : 'text-zinc-500'}`}
+                >
+                  Aggregated
+                </span>
+              </div>
+            </div>
+            {conversionMode === 'aggregated' && (
+              <div className="mt-3 rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                <strong>Aggregated mode:</strong> Consecutive buy transactions
+                for the same symbol are combined into a single buy with weighted
+                average price. Same for sells. This reduces the total number of
+                transactions.
+              </div>
+            )}
           </div>
 
           <Button
@@ -304,6 +359,10 @@ export function CsvConverter() {
                     {conversionErrors.length} Errors
                   </Badge>
                 )}
+                <Badge variant="outline" className="text-sm">
+                  Mode:{' '}
+                  {conversionMode === 'detailed' ? 'Detailed' : 'Aggregated'}
+                </Badge>
               </div>
 
               <Button onClick={handleDownload} className="mt-4">
