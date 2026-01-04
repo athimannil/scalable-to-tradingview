@@ -36,20 +36,28 @@ interface RawCsvRow {
 }
 
 /**
+ * Detect the delimiter used in the CSV file
+ */
+function detectDelimiter(content: string): string {
+  const firstLine = content.split('\n')[0];
+  if (firstLine.includes(';')) {
+    return ';';
+  }
+  return ',';
+}
+
+/**
  * Parse a Scalable Capital CSV file content
  * Handles semicolon-delimited files with European number format
  */
 export function parseScalableCsv(csvContent: string): ParseResult {
   const errors: string[] = [];
-
-  // Detect delimiter (Scalable Capital uses semicolon)
-  const firstLine = csvContent.split('\n')[0];
-  const delimiter = firstLine.includes(';') ? ';' : ',';
+  const delimiter = detectDelimiter(csvContent);
 
   const result = Papa.parse<RawCsvRow>(csvContent, {
     header: true,
-    delimiter,
     skipEmptyLines: true,
+    delimiter,
     transformHeader: (header: string) => header.trim().toLowerCase(),
   });
 
@@ -59,6 +67,7 @@ export function parseScalableCsv(csvContent: string): ParseResult {
     });
   }
 
+  // Transform raw rows to ScalableTransaction objects
   const transactions: ScalableTransaction[] = result.data.map((row) => ({
     date: row.date?.trim() || '',
     time: row.time?.trim() || '',
@@ -81,6 +90,7 @@ export function parseScalableCsv(csvContent: string): ParseResult {
 
 /**
  * Extract unique ISINs from transactions that need symbol resolution
+ * Only extracts ISINs for Buy, Sell, and Dividend transactions
  */
 export function extractUniqueIsins(
   transactions: ScalableTransaction[]
@@ -89,15 +99,28 @@ export function extractUniqueIsins(
     .filter((t) => {
       // Only extract ISINs for trade transactions (Buy, Sell, Dividend)
       const type = t.type.toLowerCase();
+      const status = t.status.toLowerCase();
+
+      // Skip cancelled/rejected/pending orders
+      if (
+        status.includes('cancelled') ||
+        status.includes('rejected') ||
+        status.includes('pending')
+      ) {
+        return false;
+      }
+
       return (
         t.isin &&
         t.isin.trim() !== '' &&
         (type.includes('buy') ||
           type.includes('sell') ||
-          type.includes('dividend'))
+          type.includes('dividend') ||
+          type.includes('distribution') ||
+          type.includes('savings plan') ||
+          type.includes('sparplan'))
       );
     })
     .map((t) => t.isin.trim());
-
   return [...new Set(isins)];
 }

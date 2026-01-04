@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   Upload,
   Download,
@@ -8,6 +8,7 @@ import {
   CheckCircle,
   Loader2,
   FileText,
+  BarChart3,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,17 @@ type ConversionStatus =
   | 'done'
   | 'error';
 
+interface TransactionStats {
+  totalOriginal: number;
+  buys: number;
+  sells: number;
+  dividends: number;
+  deposits: number;
+  withdrawals: number;
+  skipped: number;
+  errors: number;
+}
+
 export function CsvConverter() {
   const [file, setFile] = useState<File | null>(null);
   const [apiKey, setApiKey] = useState('');
@@ -64,7 +76,9 @@ export function CsvConverter() {
   const [conversionMode, setConversionMode] =
     useState<ConversionMode>('detailed');
 
-  const [, setOriginalTransactions] = useState<ScalableTransaction[]>([]);
+  const [originalTransactions, setOriginalTransactions] = useState<
+    ScalableTransaction[]
+  >([]);
   const [convertedTransactions, setConvertedTransactions] = useState<
     TradingViewTransaction[]
   >([]);
@@ -76,6 +90,37 @@ export function CsvConverter() {
   >([]);
   const [parseErrors, setParseErrors] = useState<string[]>([]);
 
+  // Calculate statistics
+  const stats: TransactionStats = useMemo(() => {
+    const buys = convertedTransactions.filter((t) => t.Side === 'Buy').length;
+    const sells = convertedTransactions.filter((t) => t.Side === 'Sell').length;
+    const dividends = convertedTransactions.filter(
+      (t) => t.Side === 'Dividend'
+    ).length;
+    const deposits = convertedTransactions.filter(
+      (t) => t.Side === 'Deposit'
+    ).length;
+    const withdrawals = convertedTransactions.filter(
+      (t) => t.Side === 'Withdrawal'
+    ).length;
+
+    return {
+      totalOriginal: originalTransactions.length,
+      buys,
+      sells,
+      dividends,
+      deposits,
+      withdrawals,
+      skipped: skippedTransactions.length,
+      errors: conversionErrors.length,
+    };
+  }, [
+    originalTransactions,
+    convertedTransactions,
+    skippedTransactions,
+    conversionErrors,
+  ]);
+
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const selectedFile = e.target.files?.[0];
@@ -86,6 +131,7 @@ export function CsvConverter() {
         setConversionErrors([]);
         setSkippedTransactions([]);
         setParseErrors([]);
+        setOriginalTransactions([]);
       }
     },
     []
@@ -126,6 +172,10 @@ export function CsvConverter() {
       const symbolMap = new Map<string, ResolvedSymbol | null>();
 
       if (uniqueIsins.length > 0) {
+        setProgressMessage(
+          `Resolving ${uniqueIsins.length} unique ISINs to ticker symbols...`
+        );
+
         // Call API to resolve ISINs
         const response = await fetch('/api/resolve-isin', {
           method: 'POST',
@@ -338,6 +388,72 @@ export function CsvConverter() {
       {/* Results Section */}
       {status === 'done' && (
         <>
+          {/* Statistics Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Conversion Statistics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div className="rounded-lg bg-zinc-100 p-3 dark:bg-zinc-800">
+                  <p className="text-sm text-zinc-500">Original Rows</p>
+                  <p className="text-2xl font-bold">{stats.totalOriginal}</p>
+                </div>
+                <div className="rounded-lg bg-green-100 p-3 dark:bg-green-900/30">
+                  <p className="text-sm text-green-600 dark:text-green-400">
+                    Buys
+                  </p>
+                  <p className="text-2xl font-bold text-green-700 dark:text-green-300">
+                    {stats.buys}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-red-100 p-3 dark:bg-red-900/30">
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    Sells
+                  </p>
+                  <p className="text-2xl font-bold text-red-700 dark:text-red-300">
+                    {stats.sells}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-blue-100 p-3 dark:bg-blue-900/30">
+                  <p className="text-sm text-blue-600 dark:text-blue-400">
+                    Dividends
+                  </p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                    {stats.dividends}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-purple-100 p-3 dark:bg-purple-900/30">
+                  <p className="text-sm text-purple-600 dark:text-purple-400">
+                    Deposits
+                  </p>
+                  <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                    {stats.deposits}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-orange-100 p-3 dark:bg-orange-900/30">
+                  <p className="text-sm text-orange-600 dark:text-orange-400">
+                    Withdrawals
+                  </p>
+                  <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">
+                    {stats.withdrawals}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-zinc-100 p-3 dark:bg-zinc-800">
+                  <p className="text-sm text-zinc-500">Skipped</p>
+                  <p className="text-2xl font-bold">{stats.skipped}</p>
+                </div>
+                <div className="rounded-lg bg-zinc-100 p-3 dark:bg-zinc-800">
+                  <p className="text-sm text-zinc-500">Errors</p>
+                  <p className="text-2xl font-bold">{stats.errors}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Summary */}
           <Card>
             <CardHeader>

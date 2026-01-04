@@ -128,26 +128,48 @@ export const EXCHANGE_CODES: Record<string, string> = {
   GS: 'SWB', // Stuttgart
   GH: 'HAM', // Hamburg
   QT: 'QUOTRIX', // Quotrix
+  US: 'NASDAQ', // US stocks - NASDAQ
+  UW: 'NASDAQ', // NASDAQ Global Select
+  UN: 'NYSE', // NYSE
+  UA: 'NYSE', // NYSE American
 } as const;
 
 /**
  * Priority order for trying exchanges when resolving ISINs
  */
 export const EXCHANGE_PRIORITY = [
-  'GR',
-  'GT',
-  'GM',
-  'GF',
-  'GS',
-  'GH',
-  'QT',
+  'GR', // Xetra first (most liquid German exchange)
+  'GT', // Tradegate
+  'GM', // Gettex
+  'GF', // Frankfurt
+  'GS', // Stuttgart
+  'GH', // Hamburg
+  'QT', // Quotrix
+  'US', // US exchanges for US stocks
+  'UW', // NASDAQ Global Select
+  'UN', // NYSE
+  'UA', // NYSE American
 ] as const;
 
 export type ExchangeCode = (typeof EXCHANGE_PRIORITY)[number];
 
 /**
  * Conversion mode options
- * - detailed: Each transaction is converted individually
- * - aggregated: Consecutive buy/sell transactions are averaged into single entries
  */
 export type ConversionMode = 'detailed' | 'aggregated';
+
+/**
+ * Valid transaction statuses that should be processed
+ */
+export const VALID_STATUSES = ['executed', 'completed', 'done'] as const;
+
+/**
+ * Transaction statuses that should be skipped
+ */
+export const SKIP_STATUSES = [
+  'cancelled',
+  'canceled', // American spelling variant
+  'rejected',
+  'pending',
+  'failed',
+] as const;

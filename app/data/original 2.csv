@@ -1,0 +1,102 @@
+date;time;status;reference;description;assetType;type;isin;shares;price;amount;fee;tax;currency
+2021-12-31;01:00:00;Executed;"SQ93MK16WP8VYK9C8NTITZ";"Scalable Capital Broker 4x Sparplan";Cash;Deposit;;;;100,00;0,00;;EUR
+2021-12-22;01:00:00;Executed;"WWEK 06138145";"Invesco S&P 500 High Dividend Low Volatility UCITS ETF Dist";Cash;Distribution;IE00BWTN6Y99;;;2,07;0,00;0,00;EUR
+2021-12-01;11:53:42;Executed;"SCALLsJMyhsdskZ";"Invesco S&P 500 High Dividend Low Volatility UCITS ETF Dist";Security;Savings plan;IE00BWTN6Y99;0,879;28,435;-24,9943;0,00;0,00;EUR
+2021-12-01;11:51:24;Executed;"SCALkP9MFxPWXwM";"iShares Core MSCI World UCITS ETF";Security;Savings plan;IE00B4L5Y983;0,325;76,718;-24,9333;0,00;0,00;EUR
+2021-12-01;11:51:19;Executed;"SCALyszks93imc9";"iShares Global Clean Energy UCITS ETF USD (Dist)";Security;Savings plan;IE00B1XNHC34;2,086;11,98;-24,9902;0,00;0,00;EUR
+2021-12-01;11:32:08;Executed;"SCALYUcoSUqvdmg";"iShares MSCI World ESG Enhanced UCITS ETF USD (Acc)";Security;Savings plan;IE00BHZPJ569;3,63;6,887;-24,9998;0,00;0,00;EUR
+2021-11-30;01:00:00;Executed;"CUSX4LRQSDRIQDUZ18KUHK";"Scalable Capital Broker 4x Sparplan";Cash;Deposit;;;;100,00;0,00;;EUR
+2021-11-29;01:00:00;Executed;"WWEK 05905828";"iShares Global Clean Energy UCITS ETF USD (Dist)";Cash;Distribution;IE00B1XNHC34;;;0,76;0,00;0,00;EUR
+2021-11-15;01:00:00;Executed;"WWEK 05771229";"Apple Inc";Cash;Distribution;US0378331005;;;0,81;0,00;0,34;EUR
+2021-11-01;15:56:30;Executed;"SCALDvMq94ZugZk";"PayPal Hldgs. Inc";Security;Buy;US70450Y1038;2;199,50;-399,00;0,00;0,00;EUR
+2021-11-01;15:54:06;Executed;"SCALX5491e3qEAn";"Plug Power Inc";Security;Sell;US72919P2020;11;34,71;381,81;0,00;0,00;EUR
+2021-11-01;12:03:14;Executed;"SCALDHnnqyqT3Fp";"iShares Core MSCI World UCITS ETF";Security;Savings plan;IE00B4L5Y983;0,328;76,19;-24,9903;0,00;0,00;EUR
+2021-11-01;11:36:24;Executed;"SCALXBcd581AUcx";"iShares Global Clean Energy UCITS ETF USD (Dist)";Security;Savings plan;IE00B1XNHC34;1,974;12,66;-24,9908;0,00;0,00;EUR
+2021-11-01;11:35:35;Executed;"SCAL8CjpLw6UdNZ";"Invesco S&P 500 High Dividend Low Volatility UCITS ETF Dist";Security;Savings plan;IE00BWTN6Y99;0,879;28,435;-24,9943;0,00;0,00;EUR
+2021-11-01;11:12:44;Executed;"SCALv4UsTSSuGhL";"iShares MSCI World ESG Enhanced UCITS ETF USD (Acc)";Security;Savings plan;IE00BHZPJ569;3,656;6,837;-24,996;0,00;0,00;EUR
+2021-10-29;02:00:00;Executed;"UNBABJCEJHRS52GKKS5WB4";"Scalable Capital Broker 4x Sparplan";Cash;Deposit;;;;100,00;0,00;;EUR
+2021-10-04;12:01:35;Executed;"SCALGXy3NaQ2Dbh";"iShares Core MSCI World UCITS ETF";Security;Savings plan;IE00B4L5Y983;0,348;71,64;-24,9307;0,00;0,00;EUR
+2021-10-04;11:33:25;Executed;"SCALQ7Bn3gTZZsJ";"iShares Global Clean Energy UCITS ETF USD (Dist)";Security;Savings plan;IE00B1XNHC34;2,362;10,58;-24,9899;0,00;0,00;EUR
+2021-10-04;11:22:39;Executed;"SCALWn7A1zCC5vf";"iShares MSCI World ESG Enhanced UCITS ETF USD (Acc)";Security;Savings plan;IE00BHZPJ569;3,895;6,418;-24,9981;0,00;0,00;EUR
+2021-10-04;11:20:34;Executed;"SCAL2ZSsodjhuW9";"Invesco S&P 500 High Dividend Low Volatility UCITS ETF Dist";Security;Savings plan;IE00BWTN6Y99;0,895;27,91;-24,9794;0,00;0,00;EUR
+2021-10-01;02:00:00;Executed;"96BB8NVH1SFGBVT2XCNIUF";"Scalable Capital Broker 4x Sparplan";Cash;Deposit;;;;100,00;0,00;;EUR
+2021-09-21;02:00:00;Executed;"WWEK 05292275";"Invesco S&P 500 High Dividend Low Volatility UCITS ETF Dist";Cash;Distribution;IE00BWTN6Y99;;;1,11;0,00;0,00;EUR
+2021-09-02;12:01:43;Executed;"SCALZkneKsBZWkW";"iShares Core MSCI World UCITS ETF";Security;Savings plan;IE00B4L5Y983;0,34;73,394;-24,9539;0,00;0,00;EUR
+2021-09-02;11:51:32;Executed;"SCALcnJ6zEgRsFb";"Invesco S&P 500 High Dividend Low Volatility UCITS ETF Dist";Security;Savings plan;IE00BWTN6Y99;0,875;28,56;-24,9899;0,00;0,00;EUR
+2021-09-02;11:46:44;Executed;"SCALL7ZRcKTv1WH";"iShares MSCI World ESG Enhanced UCITS ETF USD (Acc)";Security;Savings plan;IE00BHZPJ569;3,793;6,59;-24,9958;0,00;0,00;EUR
+2021-09-02;11:08:40;Executed;"SCALQ3pxa389aFq";"iShares Global Clean Energy UCITS ETF USD (Dist)";Security;Savings plan;IE00B1XNHC34;2,177;11,48;-24,9919;0,00;0,00;EUR
+2021-09-01;02:00:00;Executed;"NRT42HA3DZUZ2QDWLPSX1K";"Scalable Capital Broker 4x Sparplan";Cash;Deposit;;;;100,00;0,00;;EUR
+2021-08-13;02:00:00;Executed;"WWEK 05073257";"Apple Inc";Cash;Distribution;US0378331005;;;0,78;0,00;0,34;EUR
+2021-08-03;12:01:57;Executed;"SCALwvp2wMpQNUS";"iShares Core MSCI World UCITS ETF";Security;Savings plan;IE00B4L5Y983;0,349;71,46;-24,9395;0,00;0,00;EUR
+2021-08-03;11:37:57;Executed;"SCALZYkj3PnXvcZ";"iShares Global Clean Energy UCITS ETF USD (Dist)";Security;Savings plan;IE00B1XNHC34;2,253;11,094;-24,9947;0,00;0,00;EUR
+2021-08-03;11:26:18;Executed;"SCALA6Z25RNReC1";"iShares MSCI World ESG Enhanced UCITS ETF USD (Acc)";Security;Savings plan;IE00BHZPJ569;3,912;6,39;-24,9976;0,00;0,00;EUR
+2021-08-03;11:23:35;Executed;"SCALo5zCs3BUyFc";"Invesco S&P 500 High Dividend Low Volatility UCITS ETF Dist";Security;Savings plan;IE00BWTN6Y99;0,889;28,115;-24,9942;0,00;0,00;EUR
+2021-08-02;02:00:00;Executed;"KBQ3TY8YMDFSOSGKQG5C2A";"Scalable Capital Broker 4x Sparplan";Cash;Deposit;;;;100,00;0,00;;EUR
+2021-07-28;12:46:00;Executed;"SCALHWWHzapc4h3";"AUTO1 GROUP SE";Security;Buy;DE000A2LQ884;8;40,70;-325,60;0,00;0,00;EUR
+2021-07-28;12:14:02;Cancelled;"SCALmopWFwxxqdT";"AUTO1 GROUP SE";Security;Buy;DE000A2LQ884;0;0,00;0,00;0,00;0,00;EUR
+2021-07-26;18:53:11;Cancelled;"SCALyQgf7tVWt2E";"AUTO1 GROUP SE";Security;Buy;DE000A2LQ884;0;0,00;0,00;0,00;0,00;EUR
+2021-07-26;13:04:17;Executed;"SCALouL3A89KGgR";"Meta Platforms Inc A";Security;Sell;US30303M1027;1;314,20;314,20;0,00;0,00;EUR
+2021-07-26;11:12:15;Cancelled;"SCALM2GN7a2TZNe";"Meta Platforms Inc A";Security;Sell;US30303M1027;0;0,00;0,00;0,00;0,00;EUR
+2021-07-02;12:24:33;Executed;"SCALtHHSYTknmqG";"iShares Global Clean Energy UCITS ETF USD (Dist)";Security;Savings plan;IE00B1XNHC34;2,203;11,344;-24,9908;0,00;0,00;EUR
+2021-07-02;12:19:01;Executed;"SCALS8zsnTt3w5h";"iShares Core MSCI World UCITS ETF";Security;Savings plan;IE00B4L5Y983;0,354;70,50;-24,957;0,00;0,00;EUR
+2021-07-02;12:18:13;Cancelled;"SCALs48tMHwF11C";"iShares Core MSCI World UCITS ETF";Security;Savings plan;IE00B4L5Y983;0;0,00;0,00;0,00;0,00;EUR
+2021-07-02;11:54:21;Executed;"SCALkbDY47KL6fP";"iShares MSCI World ESG Enhanced UCITS ETF USD (Acc)";Security;Savings plan;IE00BHZPJ569;3,958;6,315;-24,9947;0,00;0,00;EUR
+2021-07-02;11:43:31;Executed;"SCALznHGJW3r579";"Invesco S&P 500 High Dividend Low Volatility UCITS ETF Dist";Security;Savings plan;IE00BWTN6Y99;0,877;28,475;-24,9725;0,00;0,00;EUR
+2021-07-01;02:00:00;Executed;"QWFALWLQSFNARPSU1KV8GK";"Scalable Capital Broker 4x Sparplan";Cash;Deposit;;;;100,00;0,00;;EUR
+2021-06-22;02:00:00;Executed;"WWEK 04625647";"Invesco S&P 500 High Dividend Low Volatility UCITS ETF Dist";Cash;Distribution;IE00BWTN6Y99;;;0,75;0,00;0,00;EUR
+2021-06-02;14:05:52;Executed;"SCAL4vLLtTMeZLh";"iShares Core MSCI World UCITS ETF";Security;Savings plan;IE00B4L5Y983;0,371;67,22;-24,9386;0,00;0,00;EUR
+2021-06-02;14:05:39;Executed;"SCALRcJfgHiwo1g";"iShares MSCI World ESG Enhanced UCITS ETF USD (Acc)";Security;Savings plan;IE00BHZPJ569;4,153;6,019;-24,9969;0,00;0,00;EUR
+2021-06-02;13:51:03;Executed;"SCALjcKsCzjrvyB";"Invesco S&P 500 High Dividend Low Volatility UCITS ETF Dist";Security;Savings plan;IE00BWTN6Y99;0,875;28,55;-24,9812;0,00;0,00;EUR
+2021-06-02;13:19:41;Executed;"SCALi6uny3NgcYb";"iShares Global Clean Energy UCITS ETF USD (Dist)";Security;Savings plan;IE00B1XNHC34;2,358;10,60;-24,9948;0,00;0,00;EUR
+2021-06-02;02:00:00;Executed;"904589424";"GUTSCHRIFT PRAEMIENAKTION";Cash;Deposit;;;;35,00;0,00;;EUR
+2021-06-01;02:00:00;Executed;"X1K6JXZSKT8RAJGNP7B6H";"Scalable Capital Broker 4x Sparplan";Cash;Deposit;;;;100,00;0,00;;EUR
+2021-05-27;02:00:00;Executed;"WWEK 04474583";"iShares Global Clean Energy UCITS ETF USD (Dist)";Cash;Distribution;IE00B1XNHC34;;;0,16;0,00;0,00;EUR
+2021-05-26;02:00:00;Executed;"2TUIECXWGBNBC8QMNHDTD5";"Scalable Capital Broker Auszahlung";Cash;Withdrawal;;;;-1.000,00;0,00;;EUR
+2021-05-20;02:00:00;Executed;"UD1LQ2JT4QWQGVWSWV3PDO";"Scalable Capital Broker Auszahlung";Cash;Withdrawal;;;;-4.000,00;0,00;;EUR
+2021-05-18;02:00:00;Executed;"904338712";"family";Cash;Deposit;;;;2.000,00;0,00;;EUR
+2021-05-18;02:00:00;Executed;"904339177";"Gutschrift";Cash;Deposit;;;;3.000,00;0,00;;EUR
+2021-05-14;02:00:00;Executed;"WWEK 04387918";"Apple Inc";Cash;Distribution;US0378331005;;;0,77;0,00;0,32;EUR
+2021-05-06;11:41:34;Executed;"SCALLpuamo18qkc";"Plug Power Inc";Security;Buy;US72919P2020;2;19,502;-39,004;0,00;0,00;EUR
+2021-05-04;14:54:25;Executed;"SCALYYxaQxELNrD";"iShares MSCI World ESG Enhanced UCITS ETF USD (Acc)";Security;Savings plan;IE00BHZPJ569;4,187;5,97;-24,9963;0,00;0,00;EUR
+2021-05-04;14:50:30;Executed;"SCALisWZfcaoxwq";"iShares Global Clean Energy UCITS ETF USD (Dist)";Security;Savings plan;IE00B1XNHC34;2,37;10,546;-24,994;0,00;0,00;EUR
+2021-05-04;14:46:53;Executed;"SCALNNT7ihYMn6W";"Coinbase Global Inc";Security;Buy;US19260Q1076;2;240,00;-480,00;0,00;0,00;EUR
+2021-05-04;14:31:54;Executed;"SCALx7zqnza1grS";"iShares Core MSCI World UCITS ETF";Security;Savings plan;IE00B4L5Y983;0,373;66,88;-24,9462;0,00;0,00;EUR
+2021-05-04;14:10:34;Executed;"SCALjn1BrQWpAc5";"Invesco S&P 500 High Dividend Low Volatility UCITS ETF Dist";Security;Savings plan;IE00BWTN6Y99;0,881;28,345;-24,9719;0,00;0,00;EUR
+2021-05-03;20:28:04;Cancelled;"SCALCjHmSR33Zbg";"Coinbase Global Inc";Security;Buy;US19260Q1076;0;0,00;0,00;0,00;0,00;EUR
+2021-05-03;20:23:06;Cancelled;"SCALZhxp9gqMHJH";"Plug Power Inc";Security;Buy;US72919P2020;0;0,00;0,00;0,00;0,00;EUR
+2021-05-03;20:22:16;Cancelled;"SCALmT3RFgdkt1Y";"Coinbase Global Inc";Security;Buy;US19260Q1076;0;0,00;0,00;0,00;0,00;EUR
+2021-05-03;19:40:08;Cancelled;"SCAL7hUHGtFXqRi";"Plug Power Inc";Security;Buy;US72919P2020;0;0,00;0,00;0,00;0,00;EUR
+2021-05-03;19:36:16;Cancelled;"SCAL6Tuk4jY9kZv";"Coinbase Global Inc";Security;Buy;US19260Q1076;0;0,00;0,00;0,00;0,00;EUR
+2021-05-03;02:00:00;Executed;"9XGYDEP6LQYROBFGHV7SRQ";"Scalable Capital Broker 4x Sparplan";Cash;Deposit;;;;100,00;0,00;;EUR
+2021-04-30;02:00:00;Executed;"GFZE9WHTIJXYAAZGHH7ZDI";"Scalable Capital Broker Einzahlung";Cash;Deposit;;;;200,00;0,00;;EUR
+2021-04-28;12:00:03;Executed;"SCAL3V4vguzr1Qw";"Deutsche Lufthansa AG";Security;Sell;DE0008232125;23;11,00;253,00;0,00;0,00;EUR
+2021-04-23;12:50:34;Cancelled;"SCALGve4Q3Ae3Ti";"Deutsche Lufthansa AG";Security;Sell;DE0008232125;0;0,00;0,00;0,00;0,00;EUR
+2021-04-23;07:30:16;Cancelled;"SCALR5ATpdoMjBr";"Deutsche Lufthansa AG";Security;Sell;DE0008232125;0;0,00;0,00;0,00;0,00;EUR
+2021-04-13;16:05:44;Cancelled;"SCALoX7GnDf6xEq";"Deutsche Lufthansa AG";Security;Sell;DE0008232125;0;0,00;0,00;0,00;0,00;EUR
+2021-04-06;12:28:31;Executed;"SCALf7PTdcjEDkM";"iShares MSCI World ESG Enhanced UCITS ETF USD (Acc)";Security;Savings plan;IE00BHZPJ569;4,203;5,948;-24,9994;0,00;0,00;EUR
+2021-04-06;12:18:28;Executed;"SCALRH5uWPueN19";"Invesco S&P 500 High Dividend Low Volatility UCITS ETF Dist";Security;Savings plan;IE00BWTN6Y99;0,897;27,86;-24,9904;0,00;0,00;EUR
+2021-04-06;12:15:19;Executed;"SCALx2FRPaKXqTi";"iShares Global Clean Energy UCITS ETF USD (Dist)";Security;Savings plan;IE00B1XNHC34;2,181;11,462;-24,9986;0,00;0,00;EUR
+2021-04-06;11:23:07;Executed;"SCALhVqaZYN4Sb3";"iShares Core MSCI World UCITS ETF";Security;Savings plan;IE00B4L5Y983;0,375;66,498;-24,9367;0,00;0,00;EUR
+2021-04-01;02:00:00;Executed;"5KRJITEIDZRJD1IFPD4XWE";"Scalable Capital Broker 4x Sparplan";Cash;Deposit;;;;100,00;0,00;;EUR
+2021-03-24;20:33:28;Executed;"SCAL5ZbKQ89gkDD";"Apple Inc";Security;Buy;US0378331005;3;102,00;-306,00;0,00;0,00;EUR
+2021-03-24;19:43:40;Executed;"SCALE2h1vm44aVu";"Hyatt Hotels Corp -A";Security;Buy;US4485791028;5;68,00;-340,00;0,00;0,00;EUR
+2021-03-24;19:38:06;Cancelled;"SCAL7fnWAARB6Nn";"Hyatt Hotels Corp -A";Security;Buy;US4485791028;0;0,00;0,00;0,00;0,00;EUR
+2021-03-24;19:37:32;Cancelled;"SCALi9ozPZFskET";"Hyatt Hotels Corp -A";Security;Buy;US4485791028;0;0,00;0,00;0,00;0,00;EUR
+2021-03-24;19:30:39;Cancelled;"SCALsYXYAUjZ6V5";"RENEWABLE ENERGY GROUP INC.";Security;Buy;US75972A3014;0;0,00;0,00;0,00;0,00;EUR
+2021-03-24;19:27:04;Executed;"SCALpsNcnwKfc5G";"Apple Inc";Security;Buy;US0378331005;3;102,50;-307,50;0,00;0,00;EUR
+2021-03-24;19:17:26;Cancelled;"SCALexzs2Zk4auN";"AUTO1 GROUP SE";Security;Buy;DE000A2LQ884;0;0,00;0,00;0,00;0,00;EUR
+2021-03-24;19:12:49;Cancelled;"SCALqiLDGQH2bkG";"AUTO1 GROUP SE";Security;Buy;DE000A2LQ884;0;0,00;0,00;0,00;0,00;EUR
+2021-03-24;19:01:20;Cancelled;"SCALejimcR3pLjH";"Apple Inc";Security;Buy;US0378331005;0;0,00;0,00;0,00;0,00;EUR
+2021-03-24;17:03:11;Cancelled;"SCAL5EtJ41qLb6p";"AUTO1 GROUP SE";Security;Buy;DE000A2LQ884;0;0,00;0,00;0,00;0,00;EUR
+2021-03-24;17:01:39;Cancelled;"SCALPBS8cfNzTua";"Apple Inc";Security;Buy;US0378331005;0;0,00;0,00;0,00;0,00;EUR
+2021-03-24;14:54:40;Cancelled;"SCALED53KDevPZB";"Apple Inc";Security;Buy;US0378331005;0;0,00;0,00;0,00;0,00;EUR
+2021-03-24;14:54:16;Cancelled;"SCALa1B8ANo13iM";"AUTO1 GROUP SE";Security;Buy;DE000A2LQ884;0;0,00;0,00;0,00;0,00;EUR
+2021-03-24;14:31:14;Executed;"SCALpXMsJxq3Qt4";"Plug Power Inc";Security;Buy;US72919P2020;9;31,00;-279,00;0,00;0,00;EUR
+2021-03-24;12:12:04;Executed;"SCALNjTyXonLrXC";"Deutsche Lufthansa AG";Security;Buy;DE0008232125;23;10,98;-252,54;0,00;0,00;EUR
+2021-03-24;12:02:04;Cancelled;"SCAL4p2fwBSc4gD";"Plug Power Inc";Security;Buy;US72919P2020;0;0,00;0,00;0,00;0,00;EUR
+2021-03-24;11:51:37;Executed;"SCAL2hC2CzCTE6G";"Meta Platforms Inc A";Security;Buy;US30303M1027;2;247,00;-494,00;0,00;0,00;EUR
+2021-03-24;11:37:53;Rejected;"SCALberrA5Tb9MN";"Deutsche Lufthansa AG";Security;Buy;DE0008232125;0;0,00;0,00;0,00;0,00;EUR
+2021-03-24;11:37:52;Rejected;"SCAL7SCxAX7Qe1t";"Plug Power Inc";Security;Buy;US72919P2020;0;0,00;0,00;0,00;0,00;EUR
+2021-03-24;11:21:52;Cancelled;"SCALD7at82KAWJm";"Apple Inc";Security;Buy;US0378331005;0;0,00;0,00;0,00;0,00;EUR
+2021-03-23;01:00:00;Executed;"903515170";"To Scalable Capital";Cash;Deposit;;;;2.000,00;0,00;;EUR
+2021-03-04;01:00:00;Executed;"DGVFTKSXW9I2FSX5NSLRYG";"Scalable Capital Broker Erste Einzahlung";Cash;Deposit;;;;50,00;0,00;;EUR

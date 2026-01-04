@@ -69,6 +69,40 @@ describe('parseScalableCsv', () => {
     expect(result.transactions[0].fee).toBe('');
     expect(result.transactions[0].tax).toBe('');
   });
+
+  it('should handle Distribution transactions', () => {
+    const csvContent = `date;time;status;reference;description;assetType;type;isin;shares;price;amount;fee;tax;currency
+2021-12-22;01:00:00;Executed;"WWEK 06138145";"Invesco S&P 500 High Dividend Low Volatility UCITS ETF Dist";Cash;Distribution;IE00BWTN6Y99;;;2,07;0,00;0,00;EUR`;
+
+    const result = parseScalableCsv(csvContent);
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].type).toBe('Distribution');
+    expect(result.transactions[0].amount).toBe('2,07');
+    expect(result.transactions[0].shares).toBe('');
+  });
+
+  it('should handle cancelled transactions', () => {
+    const csvContent = `date;time;status;reference;description;assetType;type;isin;shares;price;amount;fee;tax;currency
+2021-07-28;12:14:02;Cancelled;"SCALmopWFwxxqdT";"AUTO1 GROUP SE";Security;Buy;DE000A2LQ884;0;0,00;0,00;0,00;0,00;EUR`;
+
+    const result = parseScalableCsv(csvContent);
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].status).toBe('Cancelled');
+    expect(result.transactions[0].shares).toBe('0');
+  });
+
+  it('should handle withdrawal with negative amount', () => {
+    const csvContent = `date;time;status;reference;description;assetType;type;isin;shares;price;amount;fee;tax;currency
+2021-05-26;02:00:00;Executed;"2TUIECXWGBNBC8QMNHDTD5";"Scalable Capital Broker Auszahlung";Cash;Withdrawal;;;;-1.000,00;0,00;;EUR`;
+
+    const result = parseScalableCsv(csvContent);
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].type).toBe('Withdrawal');
+    expect(result.transactions[0].amount).toBe('-1.000,00');
+  });
 });
 
 describe('extractUniqueIsins', () => {
@@ -197,5 +231,109 @@ describe('extractUniqueIsins', () => {
     const isins = extractUniqueIsins(transactions);
 
     expect(isins).toHaveLength(0);
+  });
+
+  it('should extract ISINs for Distribution transactions', () => {
+    const transactions = [
+      {
+        date: '2021-12-22',
+        time: '01:00:00',
+        status: 'Executed',
+        reference: 'WWEK 06138145',
+        description:
+          'Invesco S&P 500 High Dividend Low Volatility UCITS ETF Dist',
+        assetType: 'Cash',
+        type: 'Distribution',
+        isin: 'IE00BWTN6Y99',
+        shares: '',
+        price: '',
+        amount: '2,07',
+        fee: '0,00',
+        tax: '0,00',
+        currency: 'EUR',
+      },
+    ];
+
+    const isins = extractUniqueIsins(transactions);
+
+    expect(isins).toHaveLength(1);
+    expect(isins).toContain('IE00BWTN6Y99');
+  });
+
+  it('should skip cancelled transactions when extracting ISINs', () => {
+    const transactions = [
+      {
+        date: '2021-07-28',
+        time: '12:14:02',
+        status: 'Cancelled',
+        reference: 'SCALmopWFwxxqdT',
+        description: 'AUTO1 GROUP SE',
+        assetType: 'Security',
+        type: 'Buy',
+        isin: 'DE000A2LQ884',
+        shares: '0',
+        price: '0,00',
+        amount: '0,00',
+        fee: '0,00',
+        tax: '0,00',
+        currency: 'EUR',
+      },
+    ];
+
+    const isins = extractUniqueIsins(transactions);
+
+    expect(isins).toHaveLength(0);
+  });
+
+  it('should skip rejected transactions when extracting ISINs', () => {
+    const transactions = [
+      {
+        date: '2021-03-24',
+        time: '11:37:53',
+        status: 'Rejected',
+        reference: 'SCALberrA5Tb9MN',
+        description: 'Deutsche Lufthansa AG',
+        assetType: 'Security',
+        type: 'Buy',
+        isin: 'DE0008232125',
+        shares: '0',
+        price: '0,00',
+        amount: '0,00',
+        fee: '0,00',
+        tax: '0,00',
+        currency: 'EUR',
+      },
+    ];
+
+    const isins = extractUniqueIsins(transactions);
+
+    expect(isins).toHaveLength(0);
+  });
+
+  it('should extract ISINs for Savings plan transactions', () => {
+    const transactions = [
+      {
+        date: '2021-12-01',
+        time: '11:53:42',
+        status: 'Executed',
+        reference: 'SCALLsJMyhsdskZ',
+        description:
+          'Invesco S&P 500 High Dividend Low Volatility UCITS ETF Dist',
+        assetType: 'Security',
+        type: 'Savings plan',
+        isin: 'IE00BWTN6Y99',
+        shares: '0,879',
+        price: '28,435',
+        amount: '-24,9943',
+        fee: '0,00',
+        tax: '0,00',
+        currency: 'EUR',
+      },
+    ];
+
+    const isins = extractUniqueIsins(transactions);
+
+    expect(isins).toHaveLength(1);
+    expect(isins).toContain('IE00BWTN6Y99');
   });
 });

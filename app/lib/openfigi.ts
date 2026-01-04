@@ -56,14 +56,11 @@ async function queryOpenFigi(
         await delay(2000);
         return queryOpenFigi(isin, exchCode, apiKey);
       }
-      console.error(
-        `OpenFIGI API error: ${response.status} ${response.statusText}`
-      );
       return null;
     }
 
-    const data = (await response.json()) as OpenFigiResponseItem[];
-    return data[0] || null;
+    const data = await response.json();
+    return data[0] as OpenFigiResponseItem;
   } catch (error) {
     console.error(`Error querying OpenFIGI for ${isin}:`, error);
     return null;
@@ -77,24 +74,45 @@ export async function resolveIsinToTicker(
   isin: string,
   apiKey?: string
 ): Promise<ResolvedSymbol | null> {
-  for (const exchCode of EXCHANGE_PRIORITY) {
-    const result = await queryOpenFigi(isin, exchCode, apiKey);
+  // Determine which exchanges to try based on ISIN country code
+  const countryCode = isin.substring(0, 2).toUpperCase();
 
+  // Prioritize exchanges based on ISIN country
+  let exchangesToTry = [...EXCHANGE_PRIORITY];
+
+  if (countryCode === 'US') {
+    // For US stocks, try US exchanges first
+    exchangesToTry = [
+      'US',
+      'UW',
+      'UN',
+      'UA',
+      ...EXCHANGE_PRIORITY.filter((e) => !e.startsWith('U')),
+    ];
+  } else if (countryCode === 'DE') {
+    // German stocks - default order is fine (starts with GR/Xetra)
+  } else if (countryCode === 'IE') {
+    // Irish-domiciled ETFs - commonly traded on German exchanges
+    exchangesToTry = [
+      'GR',
+      'GT',
+      'GM',
+      ...EXCHANGE_PRIORITY.filter((e) => !['GR', 'GT', 'GM'].includes(e)),
+    ];
+  }
+
+  for (const exchCode of exchangesToTry) {
+    const result = await queryOpenFigi(isin, exchCode, apiKey);
     if (result?.data && result.data.length > 0) {
       const ticker = result.data[0].ticker;
-      const exchange = EXCHANGE_CODES[exchCode];
-
+      const exchange = EXCHANGE_CODES[exchCode] || exchCode;
       return {
         ticker,
         exchange,
         fullSymbol: `${exchange}:${ticker}`,
       };
     }
-
-    // Small delay between exchange attempts to avoid rate limiting
-    await delay(100);
   }
-
   return null;
 }
 
@@ -107,21 +125,23 @@ export async function resolveMultipleIsins(
   onProgress?: (current: number, total: number) => void
 ): Promise<Map<string, ResolvedSymbol | null>> {
   const results = new Map<string, ResolvedSymbol | null>();
-  const uniqueIsins = [
-    ...new Set(isins.filter((isin) => isin && isin.trim() !== '')),
-  ];
+  const uniqueIsins = [...new Set(isins)];
 
   for (let i = 0; i < uniqueIsins.length; i++) {
     const isin = uniqueIsins[i];
+    if (!isin || isin.trim() === '') {
+      results.set(isin, null);
+      continue;
+    }
 
     const resolved = await resolveIsinToTicker(isin, apiKey);
     results.set(isin, resolved);
 
     onProgress?.(i + 1, uniqueIsins.length);
 
-    // Rate limiting: wait between requests (100ms with API key, 1s without)
+    // Rate limiting: wait between requests (150ms with API key, 1.2s without)
     if (i < uniqueIsins.length - 1) {
-      await delay(apiKey ? 100 : 1000);
+      await delay(apiKey ? 150 : 1200);
     }
   }
 

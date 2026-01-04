@@ -137,6 +137,135 @@ describe('convertTransactions', () => {
     expect(result.skipped[0].reason).toContain('Status: Pending');
   });
 
+  it('should skip cancelled transactions', () => {
+    const transactions = [createTransaction({ status: 'Cancelled' })];
+
+    const result = convertTransactions(transactions, symbolMap);
+
+    expect(result.transactions).toHaveLength(0);
+    expect(result.skipped).toHaveLength(1);
+    expect(result.skipped[0].reason).toContain('Status: Cancelled');
+  });
+
+  it('should skip rejected transactions', () => {
+    const transactions = [createTransaction({ status: 'Rejected' })];
+
+    const result = convertTransactions(transactions, symbolMap);
+
+    expect(result.transactions).toHaveLength(0);
+    expect(result.skipped).toHaveLength(1);
+    expect(result.skipped[0].reason).toContain('Status: Rejected');
+  });
+
+  it('should convert Distribution transactions as Dividend', () => {
+    const transactions = [
+      createTransaction({
+        type: 'Distribution',
+        isin: 'IE0003Z9E2Y3',
+        shares: '',
+        price: '',
+        amount: '2,07',
+        fee: '0,00',
+        tax: '0,00',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap);
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Side).toBe('Dividend');
+    expect(result.transactions[0].Symbol).toBe('XETR:4COP');
+    expect(result.transactions[0].Qty).toBe('2.07');
+  });
+
+  it('should handle Distribution with tax correctly', () => {
+    const transactions = [
+      createTransaction({
+        type: 'Distribution',
+        isin: 'IE0003Z9E2Y3',
+        shares: '',
+        price: '',
+        amount: '0,81',
+        fee: '0,00',
+        tax: '0,34',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap);
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Side).toBe('Dividend');
+    expect(result.transactions[0].Commission).toBe('0.34');
+  });
+
+  it('should handle withdrawals with thousand separators', () => {
+    const transactions = [
+      createTransaction({
+        type: 'Withdrawal',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '-4.000,00',
+        fee: '0,00',
+        tax: '',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, new Map());
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Side).toBe('Withdrawal');
+    expect(result.transactions[0].Qty).toBe('4000');
+  });
+
+  it('should handle fractional shares from savings plans', () => {
+    const transactions = [
+      createTransaction({
+        type: 'Savings plan',
+        shares: '0,879',
+        price: '28,435',
+        amount: '-24,9943',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap);
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Qty).toBe('0.879');
+    expect(result.transactions[0]['Fill Price']).toBe('28.435');
+  });
+
+  it('should handle empty fee and tax fields', () => {
+    const transactions = [
+      createTransaction({
+        fee: '',
+        tax: '',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap);
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Commission).toBe('');
+  });
+
+  it('should skip transactions with zero shares', () => {
+    const transactions = [
+      createTransaction({
+        status: 'Executed',
+        shares: '0',
+        price: '0,00',
+        amount: '0,00',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap);
+
+    expect(result.transactions).toHaveLength(0);
+    expect(result.skipped).toHaveLength(1);
+    expect(result.skipped[0].reason).toContain('No shares');
+  });
+
   it('should handle deposits as $CASH transactions', () => {
     const transactions = [
       createTransaction({
