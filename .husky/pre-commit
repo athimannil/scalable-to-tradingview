@@ -1,0 +1,19 @@
+echo "🔍 Running pre-commit checks..."
+
+# Type checking
+echo "📝 Type checking..."
+npm run type-check || exit 1
+
+# Linting
+echo "🔎 Linting..."
+npm run lint || exit 1
+
+# # Unit tests (run once, not watch mode)
+# echo "🧪 Running tests..."
+# npm run test:run || exit 1
+
+# Format and lint staged files
+echo "✨ Formatting staged files..."
+npx lint-staged || exit 1
+
+echo "✅ All checks passed!"
