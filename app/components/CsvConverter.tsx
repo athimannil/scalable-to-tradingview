@@ -492,7 +492,10 @@ export function CsvConverter() {
           <Card>
             <CardContent className="pt-6">
               <Tabs defaultValue="converted">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="original">
+                    Original ({originalTransactions.length})
+                  </TabsTrigger>
                   <TabsTrigger value="converted">
                     Converted ({convertedTransactions.length})
                   </TabsTrigger>
@@ -504,21 +507,129 @@ export function CsvConverter() {
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="converted" className="mt-4">
-                  <div className="max-h-96 overflow-auto rounded-md border">
+                <TabsContent value="original" className="mt-4">
+                  <div className="max-h-[500px] overflow-auto rounded-md border">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Symbol</TableHead>
-                          <TableHead>Side</TableHead>
-                          <TableHead>Qty</TableHead>
-                          <TableHead>Fill Price</TableHead>
-                          <TableHead>Commission</TableHead>
-                          <TableHead>Closing Time</TableHead>
+                          <TableHead className="bg-background sticky top-0">
+                            #
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0">
+                            Date
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0">
+                            Status
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0">
+                            Type
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0">
+                            Description
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0">
+                            ISIN
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0 text-right">
+                            Shares
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0 text-right">
+                            Price
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0 text-right">
+                            Amount
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0 text-right">
+                            Fee
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0 text-right">
+                            Tax
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {convertedTransactions.slice(0, 50).map((tx, index) => (
+                        {originalTransactions.map((tx, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="text-zinc-500">
+                              {index + 1}
+                            </TableCell>
+                            <TableCell className="text-sm whitespace-nowrap">
+                              {tx.date} {tx.time}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  tx.status.toLowerCase() === 'executed'
+                                    ? 'default'
+                                    : tx.status.toLowerCase() === 'cancelled'
+                                      ? 'destructive'
+                                      : 'secondary'
+                                }
+                              >
+                                {tx.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{tx.type}</Badge>
+                            </TableCell>
+                            <TableCell
+                              className="max-w-[200px] truncate"
+                              title={tx.description}
+                            >
+                              {tx.description}
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {tx.isin || '-'}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {tx.shares || '-'}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {tx.price || '-'}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {tx.amount || '-'}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {tx.fee || '-'}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {tx.tax || '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="converted" className="mt-4">
+                  <div className="max-h-[500px] overflow-auto rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="bg-background sticky top-0">
+                            Symbol
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0">
+                            Side
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0 text-right">
+                            Qty
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0 text-right">
+                            Fill Price
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0 text-right">
+                            Commission
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0">
+                            Closing Time
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {convertedTransactions.map((tx, index) => (
                           <TableRow key={index}>
                             <TableCell className="font-mono text-sm">
                               {tx.Symbol || '-'}
@@ -536,9 +647,15 @@ export function CsvConverter() {
                                 {tx.Side}
                               </Badge>
                             </TableCell>
-                            <TableCell>{tx.Qty || '-'}</TableCell>
-                            <TableCell>{tx['Fill Price'] || '-'}</TableCell>
-                            <TableCell>{tx.Commission || '-'}</TableCell>
+                            <TableCell className="text-right font-mono">
+                              {tx.Qty || '-'}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {tx['Fill Price'] || '-'}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {tx.Commission || '-'}
+                            </TableCell>
                             <TableCell className="text-sm">
                               {tx['Closing Time']}
                             </TableCell>
@@ -546,12 +663,6 @@ export function CsvConverter() {
                         ))}
                       </TableBody>
                     </Table>
-                    {convertedTransactions.length > 50 && (
-                      <p className="p-4 text-center text-sm text-zinc-500">
-                        Showing first 50 of {convertedTransactions.length}{' '}
-                        transactions
-                      </p>
-                    )}
                   </div>
                 </TabsContent>
 

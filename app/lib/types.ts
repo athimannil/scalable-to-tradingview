@@ -117,38 +117,34 @@ export interface ConversionResult {
 }
 
 /**
- * Exchange code mappings from OpenFIGI to TradingView
+ * German exchange code mappings from OpenFIGI to TradingView
  * OpenFIGI exchCode -> TradingView exchange prefix
+ *
+ * Scalable Capital only allows trading on German exchanges in EUR,
+ * so we only support German exchange codes.
  */
 export const EXCHANGE_CODES: Record<string, string> = {
-  GR: 'XETR', // Xetra (Frankfurt electronic)
-  GF: 'FRA', // Frankfurt floor
+  GM: 'GETTEX', // Gettex (Munich)
+  GR: 'XETR', // XETRA
   GT: 'TRADEGATE', // Tradegate
-  GM: 'GETTEX', // Munich / Gettex
-  GS: 'SWB', // Stuttgart
-  GH: 'HAM', // Hamburg
-  QT: 'QUOTRIX', // Quotrix
-  US: 'NASDAQ', // US stocks - NASDAQ
-  UW: 'NASDAQ', // NASDAQ Global Select
-  UN: 'NYSE', // NYSE
-  UA: 'NYSE', // NYSE American
+  GF: 'FRA', // Frankfurt floor (FWB)
+  GS: 'XSTU', // Stuttgart
+  GH: 'XHAM', // Hamburg (low coverage)
+  QT: 'QUOTRIX', // Quotrix (usually not on TradingView)
 } as const;
 
 /**
- * Priority order for trying exchanges when resolving ISINs
+ * Priority order for trying German exchanges when resolving ISINs
+ * Ordered by liquidity and preference for Scalable Capital users
  */
 export const EXCHANGE_PRIORITY = [
-  'GR', // Xetra first (most liquid German exchange)
-  'GT', // Tradegate
   'GM', // Gettex
-  'GF', // Frankfurt
+  'GR', // XETRA
+  'GT', // Tradegate
   'GS', // Stuttgart
+  'GF', // Frankfurt floor
   'GH', // Hamburg
   'QT', // Quotrix
-  'US', // US exchanges for US stocks
-  'UW', // NASDAQ Global Select
-  'UN', // NYSE
-  'UA', // NYSE American
 ] as const;
 
 export type ExchangeCode = (typeof EXCHANGE_PRIORITY)[number];

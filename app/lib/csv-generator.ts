@@ -32,6 +32,7 @@ const TYPE_MAPPING: Record<string, TradingViewSide | null> = {
   // Dividend/Distribution
   dividend: 'Dividend',
   distribution: 'Dividend', // ETF distributions
+  interest: 'Dividend', // Interest income treated as dividend
 
   // Cash transactions
   withdrawal: 'Withdrawal',
@@ -39,6 +40,7 @@ const TYPE_MAPPING: Record<string, TradingViewSide | null> = {
 
   // Tax and fees
   'taxes and fees': 'Taxes and fees',
+  taxes: 'Taxes and fees', // Standalone tax payments
   tax: 'Taxes and fees',
   fee: 'Taxes and fees',
 
@@ -89,6 +91,47 @@ function isValidStatus(status: string): boolean {
   // If status is empty, assume it's valid
   if (!normalizedStatus) return true;
   return VALID_STATUSES.some((s) => normalizedStatus.includes(s));
+}
+
+/**
+ * Check if a transaction is an interest settlement (KKT-Abschluss)
+ * These have negative amount (fee/settlement) and may have positive tax
+ */
+function isInterestSettlement(
+  transaction: ScalableTransaction,
+  parseNumber: (value: string) => number
+): boolean {
+  const type = transaction.type.toLowerCase().trim();
+  if (type !== 'interest') return false;
+
+  const amount = parseNumber(transaction.amount);
+  const tax = parseNumber(transaction.tax);
+
+  // Check for KKT-Abschluss in description
+  const descLower = transaction.description.toLowerCase();
+  const isKktAbschluss =
+    descLower.includes('kkt') || descLower.includes('abschluss');
+
+  // Interest settlements:
+  // 1. KKT-Abschluss with positive tax (and typically negative amount)
+  // 2. Negative interest (fee charged) regardless of tax
+  // 3. KKT description with zero amount but positive tax
+  return isKktAbschluss || amount < 0 || (isKktAbschluss && tax > 0);
+}
+
+/**
+ * Check if a transaction is a STORNO (reversal/cancellation)
+ * STORNO transactions reverse previous transactions and are treated as deposits
+ */
+function isStornoTransaction(transaction: ScalableTransaction): boolean {
+  const descLower = transaction.description.toLowerCase();
+  const refLower = transaction.reference.toLowerCase();
+
+  return (
+    descLower.includes('storno') ||
+    refLower.includes('cancel') ||
+    refLower.includes('storno')
+  );
 }
 
 /**
@@ -311,6 +354,117 @@ export function convertTransactions(
       return;
     }
 
+    // Handle STORNO (reversal) transactions as deposits (refunds)
+    if (isStornoTransaction(transaction)) {
+      const amount = Math.abs(parseEuropeanNumber(transaction.amount));
+      if (amount <= 0) {
+        skipped.push({
+          row: rowNumber,
+          type: transaction.type,
+          description: transaction.description,
+          reason: 'Zero amount STORNO transaction',
+        });
+        return;
+      }
+
+      // STORNO with positive amount is a refund (deposit)
+      const tradingViewTx: TradingViewTransaction = {
+        Symbol: '$CASH',
+        Side: 'Deposit',
+        Qty: amount.toString(),
+        'Fill Price': '',
+        Commission: '',
+        'Closing Time': formatDateTime(transaction.date, transaction.time),
+      };
+
+      result.push(tradingViewTx);
+      return;
+    }
+
+    // Handle Fee type transactions (subscription fees like PRIME)
+    if (transaction.type.toLowerCase() === 'fee') {
+      const amount = parseEuropeanNumber(transaction.amount);
+      const absAmount = Math.abs(amount);
+
+      if (absAmount <= 0) {
+        skipped.push({
+          row: rowNumber,
+          type: transaction.type,
+          description: transaction.description,
+          reason: 'Zero fee amount',
+        });
+        return;
+      }
+
+      // Positive amount = refund (deposit), Negative amount = fee payment
+      const tradingViewTx: TradingViewTransaction = {
+        Symbol: '$CASH',
+        Side: amount > 0 ? 'Deposit' : 'Taxes and fees',
+        Qty: absAmount.toString(),
+        'Fill Price': '',
+        Commission: '',
+        'Closing Time': formatDateTime(transaction.date, transaction.time),
+      };
+
+      result.push(tradingViewTx);
+      return;
+    }
+
+    // Handle interest settlement (KKT-Abschluss) as a tax payment
+    if (isInterestSettlement(transaction, parseEuropeanNumber)) {
+      const tax = Math.abs(parseEuropeanNumber(transaction.tax));
+      const amount = Math.abs(parseEuropeanNumber(transaction.amount));
+      const totalTaxPayment = tax + amount; // Both are payments to tax authority
+
+      if (totalTaxPayment <= 0) {
+        skipped.push({
+          row: rowNumber,
+          type: transaction.type,
+          description: transaction.description,
+          reason: 'Zero tax/fee amount in interest settlement',
+        });
+        return;
+      }
+
+      const tradingViewTx: TradingViewTransaction = {
+        Symbol: '$CASH',
+        Side: 'Taxes and fees',
+        Qty: totalTaxPayment.toString(),
+        'Fill Price': '',
+        Commission: '',
+        'Closing Time': formatDateTime(transaction.date, transaction.time),
+      };
+
+      result.push(tradingViewTx);
+      return;
+    }
+
+    // Handle standalone "Taxes" type transactions
+    if (transaction.type.toLowerCase() === 'taxes') {
+      const taxAmount = Math.abs(parseEuropeanNumber(transaction.amount));
+      if (taxAmount <= 0) {
+        skipped.push({
+          row: rowNumber,
+          type: transaction.type,
+          description: transaction.description,
+          reason: 'Zero tax amount',
+        });
+        return;
+      }
+
+      const tradingViewTx: TradingViewTransaction = {
+        Symbol: '$CASH',
+        Side: 'Taxes and fees',
+        Qty: taxAmount.toString(),
+        'Fill Price': '',
+        Commission: '',
+        'Closing Time': formatDateTime(transaction.date, transaction.time),
+      };
+
+      result.push(tradingViewTx);
+      return;
+    }
+
     // Determine symbol based on transaction type
     let symbol = '';
 
@@ -356,25 +510,48 @@ export function convertTransactions(
     const amount = Math.abs(parseEuropeanNumber(transaction.amount));
 
     // Determine quantity based on transaction type
-    let qty = '';
+    let qty = 0;
     if (['Buy', 'Sell'].includes(side)) {
       // For trades, use shares
-      qty = shares > 0 ? shares.toString() : '';
+      qty = shares;
     } else if (side === 'Dividend') {
       // For dividends, use the amount received
-      qty = amount > 0 ? amount.toString() : '';
+      qty = amount;
     } else if (['Deposit', 'Withdrawal', 'Taxes and fees'].includes(side)) {
       // For cash transactions, use the amount
-      qty = amount > 0 ? amount.toString() : '';
+      qty = amount;
     }
 
-    // Skip transactions with no quantity (likely empty rows or cancelled orders)
-    if (!qty && ['Buy', 'Sell'].includes(side)) {
+    // Skip transactions with no quantity
+    if (qty <= 0) {
+      // For dividends with zero amount but with tax, it means fully withheld
+      if (side === 'Dividend' && commission > 0) {
+        skipped.push({
+          row: rowNumber,
+          type: transaction.type,
+          description: transaction.description,
+          reason: 'Dividend fully withheld for tax (zero net amount)',
+        });
+        return;
+      }
+
+      // For trades with no shares
+      if (['Buy', 'Sell'].includes(side)) {
+        skipped.push({
+          row: rowNumber,
+          type: transaction.type,
+          description: transaction.description,
+          reason: 'No shares/quantity specified',
+        });
+        return;
+      }
+
+      // For other zero-quantity transactions
       skipped.push({
         row: rowNumber,
         type: transaction.type,
         description: transaction.description,
-        reason: 'No shares/quantity specified',
+        reason: 'Zero quantity/amount',
       });
       return;
     }
@@ -383,7 +560,7 @@ export function convertTransactions(
     const tradingViewTx: TradingViewTransaction = {
       Symbol: symbol,
       Side: side,
-      Qty: qty,
+      Qty: qty.toString(),
       'Fill Price': price > 0 ? price.toString() : '',
       Commission: commission > 0 ? commission.toString() : '',
       'Closing Time': formatDateTime(transaction.date, transaction.time),

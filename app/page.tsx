@@ -33,9 +33,10 @@ export default function Home() {
               Note
             </h3>
             <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
-              Security transfers are automatically skipped as they don&apos;t
-              represent actual trades. The converter will attempt to resolve
-              ISINs to German exchange ticker symbols (XETR, TRADEGATE, GETTEX).
+              Security transfers and corporate actions are automatically
+              skipped. All ISINs are resolved to German exchange ticker symbols
+              (XETR, TRADEGATE, GETTEX, etc.) since Scalable Capital only trades
+              on German exchanges in EUR.
             </p>
           </div>
         </div>

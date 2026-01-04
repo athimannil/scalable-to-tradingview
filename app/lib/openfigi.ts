@@ -1,5 +1,8 @@
 /**
  * OpenFIGI API client for resolving ISINs to ticker symbols
+ *
+ * This client is specifically designed for Scalable Capital users who trade
+ * on German exchanges only. It resolves ISINs to German exchange ticker symbols.
  */
 
 import {
@@ -68,38 +71,19 @@ async function queryOpenFigi(
 }
 
 /**
- * Resolve a single ISIN to a ticker symbol by trying multiple exchanges
+ * Resolve a single ISIN to a ticker symbol by trying German exchanges only
+ *
+ * Scalable Capital only allows trading on German exchanges in EUR,
+ * so we only try German exchange codes regardless of the ISIN country.
+ * Even US stocks (like Apple) are traded via German exchanges (e.g., XETR:APC).
  */
 export async function resolveIsinToTicker(
   isin: string,
   apiKey?: string
 ): Promise<ResolvedSymbol | null> {
-  // Determine which exchanges to try based on ISIN country code
-  const countryCode = isin.substring(0, 2).toUpperCase();
-
-  // Prioritize exchanges based on ISIN country
-  let exchangesToTry = [...EXCHANGE_PRIORITY];
-
-  if (countryCode === 'US') {
-    // For US stocks, try US exchanges first
-    exchangesToTry = [
-      'US',
-      'UW',
-      'UN',
-      'UA',
-      ...EXCHANGE_PRIORITY.filter((e) => !e.startsWith('U')),
-    ];
-  } else if (countryCode === 'DE') {
-    // German stocks - default order is fine (starts with GR/Xetra)
-  } else if (countryCode === 'IE') {
-    // Irish-domiciled ETFs - commonly traded on German exchanges
-    exchangesToTry = [
-      'GR',
-      'GT',
-      'GM',
-      ...EXCHANGE_PRIORITY.filter((e) => !['GR', 'GT', 'GM'].includes(e)),
-    ];
-  }
+  // Always use German exchanges only - Scalable Capital trades everything on German exchanges
+  // Even US stocks are traded via German exchanges (e.g., Apple as XETR:APC)
+  const exchangesToTry = [...EXCHANGE_PRIORITY];
 
   for (const exchCode of exchangesToTry) {
     const result = await queryOpenFigi(isin, exchCode, apiKey);

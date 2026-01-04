@@ -198,6 +198,47 @@ describe('convertTransactions', () => {
     expect(result.transactions[0].Commission).toBe('0.34');
   });
 
+  it('should skip dividends with zero amount but only tax (fully withheld)', () => {
+    // This is the case from the 2022 CSV: dividend with 0 amount but has tax
+    const transactions = [
+      createTransaction({
+        type: 'Distribution',
+        isin: 'IE0003Z9E2Y3',
+        shares: '',
+        price: '',
+        amount: '0,00',
+        fee: '0,00',
+        tax: '0,01',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap);
+
+    expect(result.transactions).toHaveLength(0);
+    expect(result.skipped).toHaveLength(1);
+    expect(result.skipped[0].reason).toContain('fully withheld for tax');
+  });
+
+  it('should skip dividends with empty amount', () => {
+    const transactions = [
+      createTransaction({
+        type: 'Distribution',
+        isin: 'IE0003Z9E2Y3',
+        shares: '',
+        price: '',
+        amount: '',
+        fee: '',
+        tax: '',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap);
+
+    expect(result.transactions).toHaveLength(0);
+    expect(result.skipped).toHaveLength(1);
+    expect(result.skipped[0].reason).toContain('Zero quantity');
+  });
+
   it('should handle withdrawals with thousand separators', () => {
     const transactions = [
       createTransaction({
@@ -677,5 +718,383 @@ describe('convertTransactions with aggregation mode', () => {
 
     expect(result.transactions).toHaveLength(1);
     expect(result.transactions[0]['Closing Time']).toBe('2024-01-03 12:00:00');
+  });
+});
+
+describe('Interest and KKT-Abschluss handling', () => {
+  const createTransaction = (
+    overrides: Partial<ScalableTransaction> = {}
+  ): ScalableTransaction => ({
+    date: '2024-01-15',
+    time: '10:30:00',
+    status: 'Executed',
+    reference: 'REF001',
+    description: 'Test Stock',
+    assetType: 'Security',
+    type: 'Buy',
+    isin: 'IE0003Z9E2Y3',
+    shares: '10',
+    price: '25,50',
+    amount: '-255,00',
+    fee: '0,99',
+    tax: '0,00',
+    currency: 'EUR',
+    ...overrides,
+  });
+
+  const symbolMap = new Map<string, ResolvedSymbol | null>([
+    [
+      'IE0003Z9E2Y3',
+      { ticker: '4COP', exchange: 'XETR', fullSymbol: 'XETR:4COP' },
+    ],
+  ]);
+
+  it('should convert KKT-Abschluss (interest settlement) as Taxes and fees', () => {
+    // This is the exact transaction from the 2023 CSV:
+    // 2023-12-29;01:00:00;Executed;"52023004";"KKT-Abschluss";Cash;Interest;;;;-155,04;0,00;185,98;EUR
+    const transactions = [
+      createTransaction({
+        description: 'KKT-Abschluss',
+        assetType: 'Cash',
+        type: 'Interest',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '-155,04',
+        fee: '0,00',
+        tax: '185,98',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap);
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Symbol).toBe('$CASH');
+    expect(result.transactions[0].Side).toBe('Taxes and fees');
+    // Total should be 155.04 + 185.98 = 341.02
+    expect(parseFloat(result.transactions[0].Qty)).toBeCloseTo(341.02, 2);
+    expect(result.errors).toHaveLength(0);
+    expect(result.skipped).toHaveLength(0);
+  });
+
+  it('should handle positive interest income as Dividend', () => {
+    // Regular interest income (not a settlement)
+    const transactions = [
+      createTransaction({
+        description: 'Zinsen Q4 2023',
+        assetType: 'Cash',
+        type: 'Interest',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '50,00',
+        fee: '0,00',
+        tax: '0,00',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap);
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Symbol).toBe('$CASH');
+    expect(result.transactions[0].Side).toBe('Dividend');
+    expect(result.transactions[0].Qty).toBe('50');
+  });
+
+  it('should handle interest income with tax as Dividend with commission', () => {
+    const transactions = [
+      createTransaction({
+        description: 'Zinsen Q4 2023',
+        assetType: 'Cash',
+        type: 'Interest',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '50,00',
+        fee: '0,00',
+        tax: '12,50',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap);
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Side).toBe('Dividend');
+    expect(result.transactions[0].Qty).toBe('50');
+    expect(result.transactions[0].Commission).toBe('12.5');
+  });
+
+  it('should handle standalone Taxes transaction', () => {
+    const transactions = [
+      createTransaction({
+        description: 'Steuerabrechnung',
+        assetType: 'Cash',
+        type: 'Taxes',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '33,16',
+        fee: '0,00',
+        tax: '',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, new Map());
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Symbol).toBe('$CASH');
+    expect(result.transactions[0].Side).toBe('Taxes and fees');
+    expect(result.transactions[0].Qty).toBe('33.16');
+  });
+
+  it('should skip zero amount interest settlement', () => {
+    const transactions = [
+      createTransaction({
+        description: 'KKT-Abschluss',
+        assetType: 'Cash',
+        type: 'Interest',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '0,00',
+        fee: '0,00',
+        tax: '0,00',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, symbolMap);
+
+    expect(result.transactions).toHaveLength(0);
+    expect(result.skipped).toHaveLength(1);
+  });
+
+  it('should convert Fee transaction (subscription charge) as Taxes and fees', () => {
+    const transactions = [
+      createTransaction({
+        description: 'PRIME+ subscription',
+        assetType: 'Cash',
+        type: 'Fee',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '-4,99',
+        fee: '0,00',
+        tax: '',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, new Map());
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Symbol).toBe('$CASH');
+    expect(result.transactions[0].Side).toBe('Taxes and fees');
+    expect(result.transactions[0].Qty).toBe('4.99');
+  });
+
+  it('should convert Fee refund (positive amount) as Deposit', () => {
+    const transactions = [
+      createTransaction({
+        description: 'Refund: PRIME subscription',
+        assetType: 'Cash',
+        type: 'Fee',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '8,97',
+        fee: '0,00',
+        tax: '',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, new Map());
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Symbol).toBe('$CASH');
+    expect(result.transactions[0].Side).toBe('Deposit');
+    expect(result.transactions[0].Qty).toBe('8.97');
+  });
+
+  it('should skip zero Fee amount', () => {
+    const transactions = [
+      createTransaction({
+        description: 'Fee adjustment',
+        assetType: 'Cash',
+        type: 'Fee',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '0,00',
+        fee: '0,00',
+        tax: '',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, new Map());
+
+    expect(result.transactions).toHaveLength(0);
+    expect(result.skipped).toHaveLength(1);
+    expect(result.skipped[0].reason).toBe('Zero fee amount');
+  });
+
+  it('should convert STORNO (reversal) transaction as Deposit', () => {
+    const transactions = [
+      createTransaction({
+        reference: 'CANCEL-52024004',
+        description: 'STORNO KKT-Abschluss',
+        assetType: 'Cash',
+        type: 'Interest',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '367,04',
+        fee: '0,00',
+        tax: '0,00',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, new Map());
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Symbol).toBe('$CASH');
+    expect(result.transactions[0].Side).toBe('Deposit');
+    expect(result.transactions[0].Qty).toBe('367.04');
+  });
+
+  it('should detect STORNO from description only', () => {
+    const transactions = [
+      createTransaction({
+        reference: 'REF123',
+        description: 'STORNO Zinsen',
+        assetType: 'Cash',
+        type: 'Interest',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '100,00',
+        fee: '0,00',
+        tax: '0,00',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, new Map());
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Side).toBe('Deposit');
+    expect(result.transactions[0].Qty).toBe('100');
+  });
+
+  it('should skip zero amount STORNO', () => {
+    const transactions = [
+      createTransaction({
+        reference: 'CANCEL-123',
+        description: 'STORNO',
+        assetType: 'Cash',
+        type: 'Interest',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '0,00',
+        fee: '0,00',
+        tax: '0,00',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, new Map());
+
+    expect(result.transactions).toHaveLength(0);
+    expect(result.skipped).toHaveLength(1);
+    expect(result.skipped[0].reason).toBe('Zero amount STORNO transaction');
+  });
+
+  it('should convert negative interest (without KKT) as Taxes and fees', () => {
+    const transactions = [
+      createTransaction({
+        reference: 'd48f4de2-7cb5-4165',
+        description: '',
+        assetType: 'Cash',
+        type: 'Interest',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '-100,08',
+        fee: '0,00',
+        tax: '0,00',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, new Map());
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Symbol).toBe('$CASH');
+    expect(result.transactions[0].Side).toBe('Taxes and fees');
+    expect(result.transactions[0].Qty).toBe('100.08');
+  });
+
+  it('should convert KKT-Abschluss with only negative amount', () => {
+    const transactions = [
+      createTransaction({
+        description: 'KKT-Abschluss',
+        assetType: 'Cash',
+        type: 'Interest',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '-160,87',
+        fee: '0,00',
+        tax: '0,00',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, new Map());
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Side).toBe('Taxes and fees');
+    expect(result.transactions[0].Qty).toBe('160.87');
+  });
+
+  it('should skip zero amount deposits (BULK transactions)', () => {
+    const transactions = [
+      createTransaction({
+        reference: 'BULK_SHARES_xxx',
+        description: '',
+        assetType: 'Cash',
+        type: 'Deposit',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '0,00',
+        fee: '0,00',
+        tax: '',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, new Map());
+
+    expect(result.transactions).toHaveLength(0);
+    expect(result.skipped).toHaveLength(1);
+    expect(result.skipped[0].reason).toBe('Zero quantity/amount');
+  });
+
+  it('should convert large Migration Cash deposit', () => {
+    const transactions = [
+      createTransaction({
+        reference: '5KX6MI',
+        description: 'Migration Cash',
+        assetType: 'Cash',
+        type: 'Deposit',
+        isin: '',
+        shares: '',
+        price: '',
+        amount: '36.983,67',
+        fee: '0,00',
+        tax: '',
+      }),
+    ];
+
+    const result = convertTransactions(transactions, new Map());
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].Side).toBe('Deposit');
+    expect(result.transactions[0].Qty).toBe('36983.67');
   });
 });
