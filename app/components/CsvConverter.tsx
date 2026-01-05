@@ -40,12 +40,19 @@ import {
   generateTradingViewCsv,
 } from '@/app/lib/csv-generator';
 import {
+  convertToWealthfolio,
+  generateWealthfolioCsv,
+  WealthfolioTransaction,
+} from '@/app/lib/wealthfolio-generator';
+import {
   ScalableTransaction,
   TradingViewTransaction,
   ConversionError,
   SkippedTransaction,
   ResolvedSymbol,
   ConversionMode,
+  YahooBatchValidationResponse,
+  YAHOO_FINANCE_SUFFIXES,
 } from '@/app/lib/types';
 
 type ConversionStatus =
@@ -81,6 +88,9 @@ export function CsvConverter() {
   >([]);
   const [convertedTransactions, setConvertedTransactions] = useState<
     TradingViewTransaction[]
+  >([]);
+  const [wealthfolioTransactions, setWealthfolioTransactions] = useState<
+    WealthfolioTransaction[]
   >([]);
   const [conversionErrors, setConversionErrors] = useState<ConversionError[]>(
     []
@@ -128,6 +138,7 @@ export function CsvConverter() {
         setFile(selectedFile);
         setStatus('idle');
         setConvertedTransactions([]);
+        setWealthfolioTransactions([]);
         setConversionErrors([]);
         setSkippedTransactions([]);
         setParseErrors([]);
@@ -203,10 +214,60 @@ export function CsvConverter() {
 
       setProgress(70);
 
-      // Step 3: Convert transactions
+      // Step 3: Validate Yahoo Finance symbols
+      setProgressMessage('Validating Yahoo Finance symbols...');
+
+      // Get unique tickers that need validation
+      const tickersToValidate = Array.from(symbolMap.entries())
+        .filter(([, resolved]) => resolved !== null)
+        .map(([isin, resolved]) => ({
+          isin,
+          ticker: resolved!.ticker,
+          preferredSuffix: YAHOO_FINANCE_SUFFIXES[resolved!.exchCode] || '.DE',
+        }));
+
+      if (tickersToValidate.length > 0) {
+        try {
+          const validateResponse = await fetch('/api/validate-yahoo', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              symbols: tickersToValidate.map((t) => ({
+                ticker: t.ticker,
+                preferredSuffix: t.preferredSuffix,
+              })),
+            }),
+          });
+
+          if (validateResponse.ok) {
+            const { results } =
+              (await validateResponse.json()) as YahooBatchValidationResponse;
+
+            // Update symbolMap with validated Yahoo symbols
+            results.forEach((result, index) => {
+              const { isin } = tickersToValidate[index];
+              const existing = symbolMap.get(isin);
+              if (existing && result.validSymbol) {
+                symbolMap.set(isin, {
+                  ...existing,
+                  yahooSymbol: result.validSymbol,
+                });
+              }
+            });
+          }
+        } catch (validateError) {
+          // Yahoo validation failed, continue with default suffixes
+          console.warn('Yahoo validation failed:', validateError);
+        }
+      }
+
+      setProgress(85);
+
+      // Step 4: Convert transactions
       setStatus('converting');
       setProgressMessage('Converting transactions...');
 
+      // Convert to TradingView format
       const conversionResult = convertTransactions(
         transactions,
         symbolMap,
@@ -216,6 +277,15 @@ export function CsvConverter() {
       setConvertedTransactions(conversionResult.transactions);
       setConversionErrors(conversionResult.errors);
       setSkippedTransactions(conversionResult.skipped);
+
+      // Convert to Wealthfolio format
+      const wealthfolioResult = convertToWealthfolio(
+        transactions,
+        symbolMap,
+        conversionMode
+      );
+
+      setWealthfolioTransactions(wealthfolioResult.transactions);
 
       setProgress(100);
       setStatus('done');
@@ -228,6 +298,13 @@ export function CsvConverter() {
     }
   }, [file, apiKey, conversionMode]);
 
+  const getBaseFileName = useCallback(() => {
+    if (!file) return 'portfolio';
+    const name = file.name;
+    // Remove .csv extension if present
+    return name.endsWith('.csv') ? name.slice(0, -4) : name;
+  }, [file]);
+
   const handleDownload = useCallback(() => {
     if (convertedTransactions.length === 0) return;
 
@@ -237,12 +314,28 @@ export function CsvConverter() {
 
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'tradingview_portfolio.csv';
+    link.download = `${getBaseFileName()}_TradingView.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  }, [convertedTransactions]);
+  }, [convertedTransactions, getBaseFileName]);
+
+  const handleDownloadWealthfolio = useCallback(() => {
+    if (wealthfolioTransactions.length === 0) return;
+
+    const csvContent = generateWealthfolioCsv(wealthfolioTransactions);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${getBaseFileName()}_Wealthfolio.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [wealthfolioTransactions, getBaseFileName]);
 
   const isProcessing = ['parsing', 'resolving', 'converting'].includes(status);
 
@@ -354,7 +447,7 @@ export function CsvConverter() {
             ) : (
               <>
                 <FileText className="mr-2 h-4 w-4" />
-                Convert to TradingView Format
+                Convert Transactions
               </>
             )}
           </Button>
@@ -465,7 +558,10 @@ export function CsvConverter() {
             <CardContent>
               <div className="flex flex-wrap gap-4">
                 <Badge variant="default" className="text-sm">
-                  {convertedTransactions.length} Converted
+                  {convertedTransactions.length} TradingView
+                </Badge>
+                <Badge variant="default" className="text-sm">
+                  {wealthfolioTransactions.length} Wealthfolio
                 </Badge>
                 <Badge variant="secondary" className="text-sm">
                   {skippedTransactions.length} Skipped
@@ -481,10 +577,16 @@ export function CsvConverter() {
                 </Badge>
               </div>
 
-              <Button onClick={handleDownload} className="mt-4">
-                <Download className="mr-2 h-4 w-4" />
-                Download TradingView CSV
-              </Button>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Button onClick={handleDownload}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download TradingView CSV
+                </Button>
+                <Button onClick={handleDownloadWealthfolio} variant="secondary">
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Wealthfolio CSV
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -492,12 +594,15 @@ export function CsvConverter() {
           <Card>
             <CardContent className="pt-6">
               <Tabs defaultValue="converted">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="original">
                     Original ({originalTransactions.length})
                   </TabsTrigger>
                   <TabsTrigger value="converted">
-                    Converted ({convertedTransactions.length})
+                    TradingView ({convertedTransactions.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="wealthfolio">
+                    Wealthfolio ({wealthfolioTransactions.length})
                   </TabsTrigger>
                   <TabsTrigger value="skipped">
                     Skipped ({skippedTransactions.length})
@@ -658,6 +763,79 @@ export function CsvConverter() {
                             </TableCell>
                             <TableCell className="text-sm">
                               {tx['Closing Time']}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="wealthfolio" className="mt-4">
+                  <div className="max-h-[500px] overflow-auto rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="bg-background sticky top-0">
+                            Date
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0">
+                            Symbol
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0 text-right">
+                            Quantity
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0">
+                            Activity
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0 text-right">
+                            Unit Price
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0">
+                            Currency
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0 text-right">
+                            Fee
+                          </TableHead>
+                          <TableHead className="bg-background sticky top-0 text-right">
+                            Amount
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {wealthfolioTransactions.map((tx, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="text-sm">{tx.date}</TableCell>
+                            <TableCell className="font-mono text-sm">
+                              {tx.symbol || '-'}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {tx.quantity || '-'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  tx.activityType === 'BUY'
+                                    ? 'default'
+                                    : tx.activityType === 'SELL'
+                                      ? 'destructive'
+                                      : 'secondary'
+                                }
+                              >
+                                {tx.activityType}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {tx.unitPrice || '-'}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {tx.currency}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {tx.fee || '-'}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {tx.amount || '-'}
                             </TableCell>
                           </TableRow>
                         ))}

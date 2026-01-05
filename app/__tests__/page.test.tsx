@@ -9,7 +9,7 @@ test('Page renders the title', () => {
     screen.getByRole('heading', {
       level: 1,
     })
-  ).toHaveTextContent('Scalable Capital to TradingView Converter');
+  ).toHaveTextContent('Scalable Capital Portfolio Converter');
 });
 
 test('Page renders the CsvConverter component', () => {

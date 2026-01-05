@@ -93,6 +93,7 @@ export async function resolveIsinToTicker(
       return {
         ticker,
         exchange,
+        exchCode, // Store original OpenFIGI exchange code for Yahoo Finance suffix mapping
         fullSymbol: `${exchange}:${ticker}`,
       };
     }

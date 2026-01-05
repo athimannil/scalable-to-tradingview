@@ -84,7 +84,33 @@ export interface OpenFigiResponseItem {
 export interface ResolvedSymbol {
   ticker: string;
   exchange: string;
+  exchCode: string; // Original OpenFIGI exchange code (e.g., 'GR', 'GF', 'GM')
   fullSymbol: string;
+  yahooSymbol?: string; // Validated Yahoo Finance symbol (e.g., 'SAP.DE', 'SAP.F')
+}
+
+/**
+ * Yahoo Finance validation request
+ */
+export interface YahooValidationRequest {
+  ticker: string;
+  preferredSuffix?: string;
+}
+
+/**
+ * Yahoo Finance validation response
+ */
+export interface YahooValidationResponse {
+  ticker: string;
+  validSymbol: string | null;
+  testedSuffixes: string[];
+}
+
+/**
+ * Yahoo Finance batch validation response
+ */
+export interface YahooBatchValidationResponse {
+  results: YahooValidationResponse[];
 }
 
 /**
@@ -131,6 +157,32 @@ export const EXCHANGE_CODES: Record<string, string> = {
   GS: 'XSTU', // Stuttgart
   GH: 'XHAM', // Hamburg (low coverage)
   QT: 'QUOTRIX', // Quotrix (usually not on TradingView)
+} as const;
+
+/**
+ * Yahoo Finance suffix mappings for German exchanges
+ * OpenFIGI exchCode -> Yahoo Finance suffix
+ *
+ * Yahoo Finance uses different suffixes than TradingView for German exchanges.
+ * Reference: https://help.yahoo.com/kb/exchanges-data-providers-yahoo-finance-sln2310.html
+ *
+ * German exchange suffixes:
+ * - .DE  XETRA (main German exchange)
+ * - .F   Frankfurt
+ * - .SG  Stuttgart
+ * - .MU  Munich
+ * - .BE  Berlin
+ * - .HM  Hamburg
+ * - .DU  Düsseldorf
+ */
+export const YAHOO_FINANCE_SUFFIXES: Record<string, string> = {
+  GR: '.DE', // XETRA -> .DE
+  GF: '.F', // Frankfurt floor -> .F
+  GM: '.MU', // Munich/Gettex -> .MU
+  GT: '.DE', // Tradegate -> .DE (most liquid fallback)
+  GS: '.SG', // Stuttgart -> .SG
+  GH: '.HM', // Hamburg -> .HM
+  QT: '.DE', // Quotrix -> .DE (fallback)
 } as const;
 
 /**

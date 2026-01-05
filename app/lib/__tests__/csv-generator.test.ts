@@ -30,11 +30,21 @@ describe('convertTransactions', () => {
   const symbolMap = new Map<string, ResolvedSymbol | null>([
     [
       'IE0003Z9E2Y3',
-      { ticker: '4COP', exchange: 'XETR', fullSymbol: 'XETR:4COP' },
+      {
+        ticker: '4COP',
+        exchange: 'XETR',
+        exchCode: 'GR',
+        fullSymbol: 'XETR:4COP',
+      },
     ],
     [
       'IE00063FT9K6',
-      { ticker: 'COPM', exchange: 'XETR', fullSymbol: 'XETR:COPM' },
+      {
+        ticker: 'COPM',
+        exchange: 'XETR',
+        exchCode: 'GR',
+        fullSymbol: 'XETR:COPM',
+      },
     ],
   ]);
 
@@ -508,11 +518,21 @@ describe('convertTransactions with aggregation mode', () => {
   const symbolMap = new Map<string, ResolvedSymbol | null>([
     [
       'IE0003Z9E2Y3',
-      { ticker: '4COP', exchange: 'XETR', fullSymbol: 'XETR:4COP' },
+      {
+        ticker: '4COP',
+        exchange: 'XETR',
+        exchCode: 'GR',
+        fullSymbol: 'XETR:4COP',
+      },
     ],
     [
       'IE00063FT9K6',
-      { ticker: 'COPM', exchange: 'XETR', fullSymbol: 'XETR:COPM' },
+      {
+        ticker: 'COPM',
+        exchange: 'XETR',
+        exchCode: 'GR',
+        fullSymbol: 'XETR:COPM',
+      },
     ],
   ]);
 
@@ -745,7 +765,12 @@ describe('Interest and KKT-Abschluss handling', () => {
   const symbolMap = new Map<string, ResolvedSymbol | null>([
     [
       'IE0003Z9E2Y3',
-      { ticker: '4COP', exchange: 'XETR', fullSymbol: 'XETR:4COP' },
+      {
+        ticker: '4COP',
+        exchange: 'XETR',
+        exchCode: 'GR',
+        fullSymbol: 'XETR:4COP',
+      },
     ],
   ]);
 

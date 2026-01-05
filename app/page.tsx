@@ -6,11 +6,11 @@ export default function Home() {
       <main className="container mx-auto max-w-4xl px-4">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Scalable Capital to TradingView Converter
+            Scalable Capital Portfolio Converter
           </h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Convert your Scalable Capital transaction CSV to TradingView
-            portfolio format
+            Convert your Scalable Capital transaction CSV to TradingView or
+            Wealthfolio portfolio format
           </p>
         </div>
         <CsvConverter />
@@ -24,9 +24,9 @@ export default function Home() {
               Optionally enter your OpenFIGI API key for higher rate limits
             </li>
             <li>Upload the CSV file using the form above</li>
-            <li>Review the converted transactions in the preview table</li>
-            <li>Download the TradingView-compatible CSV file</li>
-            <li>Import the file into your TradingView portfolio</li>
+            <li>Review the converted transactions in the preview tabs</li>
+            <li>Download the TradingView CSV or Wealthfolio CSV as needed</li>
+            <li>Import the file into your portfolio tracker</li>
           </ol>
           <div className="mt-4 rounded border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
             <h3 className="font-medium text-yellow-800 dark:text-yellow-200">
