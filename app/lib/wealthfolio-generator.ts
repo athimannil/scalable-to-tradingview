@@ -113,14 +113,19 @@ const TYPE_MAPPING: Record<string, WealthfolioActivityType | null> = {
 
 /**
  * Convert a resolved symbol to Yahoo Finance format
- * Uses the exchCode to determine the correct Yahoo Finance suffix
+ * Uses validated yahooSymbol if available, otherwise falls back to exchCode-based suffix
  *
  * Examples:
- * - { ticker: 'APC', exchCode: 'GR' } -> 'APC.DE' (XETRA)
- * - { ticker: '3ZU0', exchCode: 'GF' } -> '3ZU0.F' (Frankfurt)
- * - { ticker: 'APC', exchCode: 'GM' } -> 'APC.MU' (Munich/Gettex)
+ * - { ticker: 'APC', exchCode: 'GR', yahooSymbol: 'APC.DE' } -> 'APC.DE' (validated)
+ * - { ticker: '3ZU0', exchCode: 'GF', yahooSymbol: '3ZU0.F' } -> '3ZU0.F' (validated)
+ * - { ticker: 'APC', exchCode: 'GM' } -> 'APC.MU' (fallback to suffix mapping)
  */
 function convertToYahooSymbol(resolved: ResolvedSymbol): string {
+  // Use validated Yahoo symbol if available
+  if (resolved.yahooSymbol) {
+    return resolved.yahooSymbol;
+  }
+  // Fallback to exchCode-based suffix
   const suffix = YAHOO_FINANCE_SUFFIXES[resolved.exchCode] || '.DE';
   return `${resolved.ticker}${suffix}`;
 }
