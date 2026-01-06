@@ -9,7 +9,7 @@ test('Page renders the title', () => {
     screen.getByRole('heading', {
       level: 1,
     })
-  ).toHaveTextContent('Scalable Capital Portfolio Converter');
+  ).toHaveTextContent('Scalable Portfolio Converter');
 });
 
 test('Page renders the CsvConverter component', () => {
@@ -20,4 +20,14 @@ test('Page renders the CsvConverter component', () => {
 test('Page renders usage instructions', () => {
   render(<Page />);
   expect(screen.getByText('How to use')).toBeInTheDocument();
+});
+
+test('Page shows TradingView format info', () => {
+  render(<Page />);
+  expect(screen.getByText('TradingView')).toBeInTheDocument();
+});
+
+test('Page shows Wealthfolio format info', () => {
+  render(<Page />);
+  expect(screen.getByText('Wealthfolio')).toBeInTheDocument();
 });

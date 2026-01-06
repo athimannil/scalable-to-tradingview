@@ -52,7 +52,9 @@ import {
   ResolvedSymbol,
   ConversionMode,
   YahooBatchValidationResponse,
+  TradingViewBatchValidationResponse,
   YAHOO_FINANCE_SUFFIXES,
+  EXCHANGE_CODES,
 } from '@/app/lib/types';
 
 type ConversionStatus =
@@ -258,6 +260,54 @@ export function CsvConverter() {
         } catch (validateError) {
           // Yahoo validation failed, continue with default suffixes
           console.warn('Yahoo validation failed:', validateError);
+        }
+      }
+
+      setProgress(78);
+
+      // Step 3b: Validate TradingView symbols
+      setProgressMessage('Validating TradingView symbols...');
+
+      const tickersForTradingView = Array.from(symbolMap.entries())
+        .filter(([, resolved]) => resolved !== null)
+        .map(([isin, resolved]) => ({
+          isin,
+          ticker: resolved!.ticker,
+          preferredExchange: EXCHANGE_CODES[resolved!.exchCode] || 'SWB',
+        }));
+
+      if (tickersForTradingView.length > 0) {
+        try {
+          const tvValidateResponse = await fetch('/api/validate-tradingview', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              symbols: tickersForTradingView.map((t) => ({
+                ticker: t.ticker,
+                preferredExchange: t.preferredExchange,
+              })),
+            }),
+          });
+
+          if (tvValidateResponse.ok) {
+            const { results } =
+              (await tvValidateResponse.json()) as TradingViewBatchValidationResponse;
+
+            // Update symbolMap with validated TradingView symbols
+            results.forEach((result, index) => {
+              const { isin } = tickersForTradingView[index];
+              const existing = symbolMap.get(isin);
+              if (existing && result.validSymbol) {
+                symbolMap.set(isin, {
+                  ...existing,
+                  tradingViewSymbol: result.validSymbol,
+                });
+              }
+            });
+          }
+        } catch (validateError) {
+          // TradingView validation failed, continue with default symbols
+          console.warn('TradingView validation failed:', validateError);
         }
       }
 

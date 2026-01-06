@@ -305,6 +305,19 @@ function aggregateTransactions(
 }
 
 /**
+ * Get the TradingView symbol from a resolved symbol
+ * Uses validated tradingViewSymbol if available, otherwise falls back to fullSymbol
+ */
+function getTradingViewSymbol(resolved: ResolvedSymbol): string {
+  // Use validated TradingView symbol if available
+  if (resolved.tradingViewSymbol) {
+    return resolved.tradingViewSymbol;
+  }
+  // Fallback to the original fullSymbol from OpenFIGI
+  return resolved.fullSymbol;
+}
+
+/**
  * Convert Scalable Capital transactions to TradingView format
  */
 export function convertTransactions(
@@ -494,7 +507,8 @@ export function convertTransactions(
           });
           return;
         }
-        symbol = resolved.fullSymbol;
+        // Use validated TradingView symbol if available
+        symbol = getTradingViewSymbol(resolved);
       }
     } else {
       // For cash transactions (Deposit, Withdrawal, Taxes and fees)

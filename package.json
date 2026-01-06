@@ -1,7 +1,18 @@
 {
-  "name": "nextjs-starter",
-  "version": "0.1.0",
+  "name": "scalable-portfolio-converter",
+  "version": "1.0.0",
+  "description": "Convert Scalable Capital transaction CSV exports to TradingView and Wealthfolio portfolio formats",
   "private": true,
+  "keywords": [
+    "scalable-capital",
+    "tradingview",
+    "wealthfolio",
+    "portfolio",
+    "csv",
+    "converter",
+    "investment",
+    "trading"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",

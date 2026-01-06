@@ -87,6 +87,7 @@ export interface ResolvedSymbol {
   exchCode: string; // Original OpenFIGI exchange code (e.g., 'GR', 'GF', 'GM')
   fullSymbol: string;
   yahooSymbol?: string; // Validated Yahoo Finance symbol (e.g., 'SAP.DE', 'SAP.F')
+  tradingViewSymbol?: string; // Validated TradingView symbol (e.g., 'XETR:SAP', 'SWB:EWG2')
 }
 
 /**
@@ -111,6 +112,30 @@ export interface YahooValidationResponse {
  */
 export interface YahooBatchValidationResponse {
   results: YahooValidationResponse[];
+}
+
+/**
+ * TradingView validation request
+ */
+export interface TradingViewValidationRequest {
+  ticker: string;
+  preferredExchange?: string;
+}
+
+/**
+ * TradingView validation response
+ */
+export interface TradingViewValidationResponse {
+  ticker: string;
+  validSymbol: string | null;
+  testedExchanges: string[];
+}
+
+/**
+ * TradingView batch validation response
+ */
+export interface TradingViewBatchValidationResponse {
+  results: TradingViewValidationResponse[];
 }
 
 /**
@@ -158,6 +183,22 @@ export const EXCHANGE_CODES: Record<string, string> = {
   GH: 'XHAM', // Hamburg (low coverage)
   QT: 'QUOTRIX', // Quotrix (usually not on TradingView)
 } as const;
+
+/**
+ * TradingView exchange prefixes to try for validation
+ * Ordered by likelihood of availability on TradingView
+ */
+export const TRADINGVIEW_EXCHANGES = [
+  'SWB', // Stuttgart (Börse Stuttgart)
+  'GETTEX',
+  'XETR', // XETRA - most common
+  'MUN', // Munich
+  'FRA', // Frankfurt
+  'DUS', // Düsseldorf
+  'HAM', // Hamburg
+  'BER', // Berlin
+  'TRADEGATE',
+] as const;
 
 /**
  * Yahoo Finance suffix mappings for German exchanges
