@@ -28,7 +28,7 @@ async function checkYahooSymbol(symbol: string): Promise<boolean> {
   try {
     // Use Yahoo Finance quote API to check if symbol exists
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
-
+    console.log('Checking Yahoo Finance URL:', url);
     const response = await fetch(url, {
       headers: {
         'User-Agent':

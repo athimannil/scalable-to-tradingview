@@ -20,46 +20,81 @@ interface BatchValidationRequest {
   }>;
 }
 
+interface TradingViewSearchItem {
+  symbol: string;
+  exchange?: string;
+  description?: string;
+  type?: string;
+}
+
 /**
  * Check if a symbol exists on TradingView
- * Uses TradingView's symbol search API
+ * Uses TradingView search API for reliable validation
  */
 async function checkTradingViewSymbol(
   exchange: string,
   ticker: string
 ): Promise<boolean> {
-  try {
-    // TradingView symbol search endpoint
-    const url = `https://symbol-search.tradingview.com/symbol_search/?text=${encodeURIComponent(ticker)}&type=stock&exchange=${encodeURIComponent(exchange)}`;
+  const symbol = `${exchange}:${ticker}`;
 
-    const response = await fetch(url, {
+  try {
+    // Use TradingView's search API which is more reliable
+    const searchUrl = `https://www.tradingview.com/api/v1/search?q=${encodeURIComponent(ticker)}&type=stock&exchange=${encodeURIComponent(exchange)}&limit=5`;
+    console.log('Checking TradingView search:', searchUrl);
+
+    const response = await fetch(searchUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        Accept: 'application/json',
+        Referer: 'https://www.tradingview.com/',
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Search results for', symbol, ':', data);
+
+      // Check if we found an exact match
+      if (Array.isArray(data)) {
+        const exactMatch = data.find(
+          (item: TradingViewSearchItem) =>
+            item.symbol === symbol ||
+            (item.symbol === ticker && item.exchange === exchange) ||
+            item.symbol?.toUpperCase() === symbol.toUpperCase()
+        );
+
+        if (exactMatch) {
+          console.log(`✓ ${symbol} found in search results`);
+          return true;
+        }
+      }
+    }
+
+    // Fallback: Try direct symbol page check
+    const pageUrl = `https://www.tradingview.com/symbols/${encodeURIComponent(symbol)}/`;
+    console.log('Fallback: Checking symbol page:', pageUrl);
+
+    const pageResponse = await fetch(pageUrl, {
+      method: 'HEAD',
       headers: {
         'User-Agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       },
+      signal: AbortSignal.timeout(3000),
     });
 
-    if (!response.ok) {
-      return false;
+    if (pageResponse.ok) {
+      console.log(`✓ ${symbol} page exists`);
+      return true;
     }
 
-    const data = await response.json();
-
-    // Check if we found an exact match for the ticker on this exchange
-    if (Array.isArray(data) && data.length > 0) {
-      return data.some(
-        (item: { symbol: string; exchange: string }) =>
-          item.symbol.toUpperCase() === ticker.toUpperCase() &&
-          item.exchange.toUpperCase() === exchange.toUpperCase()
-      );
-    }
-
+    console.log(`✗ ${symbol} not found`);
     return false;
   } catch (error) {
-    console.error(
-      `Error checking TradingView symbol ${exchange}:${ticker}:`,
-      error
-    );
+    console.warn(`Validation failed for ${symbol}, assuming invalid:`, error);
+    // If we can't validate, assume invalid to be safe
     return false;
   }
 }
