@@ -76,6 +76,11 @@ interface TransactionStats {
   errors: number;
 }
 
+// Validation configuration
+// Set to false to skip external validation API calls and rely on smart routing logic
+const ENABLE_YAHOO_VALIDATION = false;
+const ENABLE_TRADINGVIEW_VALIDATION = false;
+
 export function CsvConverter() {
   const [file, setFile] = useState<File | null>(null);
   const [apiKey, setApiKey] = useState('');
@@ -216,98 +221,106 @@ export function CsvConverter() {
 
       setProgress(70);
 
-      // Step 3: Validate Yahoo Finance symbols
-      setProgressMessage('Validating Yahoo Finance symbols...');
+      // Step 3: Validate Yahoo Finance symbols (optional)
+      if (ENABLE_YAHOO_VALIDATION) {
+        setProgressMessage('Validating Yahoo Finance symbols...');
 
-      // Get unique tickers that need validation
-      const tickersToValidate = Array.from(symbolMap.entries())
-        .filter(([, resolved]) => resolved !== null)
-        .map(([isin, resolved]) => ({
-          isin,
-          ticker: resolved!.ticker,
-          preferredSuffix: YAHOO_FINANCE_SUFFIXES[resolved!.exchCode] || '.DE',
-        }));
+        // Get unique tickers that need validation
+        const tickersToValidate = Array.from(symbolMap.entries())
+          .filter(([, resolved]) => resolved !== null)
+          .map(([isin, resolved]) => ({
+            isin,
+            ticker: resolved!.ticker,
+            preferredSuffix:
+              YAHOO_FINANCE_SUFFIXES[resolved!.exchCode] || '.DE',
+          }));
 
-      if (tickersToValidate.length > 0) {
-        try {
-          const validateResponse = await fetch('/api/validate-yahoo', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              symbols: tickersToValidate.map((t) => ({
-                ticker: t.ticker,
-                preferredSuffix: t.preferredSuffix,
-              })),
-            }),
-          });
-
-          if (validateResponse.ok) {
-            const { results } =
-              (await validateResponse.json()) as YahooBatchValidationResponse;
-
-            // Update symbolMap with validated Yahoo symbols
-            results.forEach((result, index) => {
-              const { isin } = tickersToValidate[index];
-              const existing = symbolMap.get(isin);
-              if (existing && result.validSymbol) {
-                symbolMap.set(isin, {
-                  ...existing,
-                  yahooSymbol: result.validSymbol,
-                });
-              }
+        if (tickersToValidate.length > 0) {
+          try {
+            const validateResponse = await fetch('/api/validate-yahoo', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                symbols: tickersToValidate.map((t) => ({
+                  ticker: t.ticker,
+                  preferredSuffix: t.preferredSuffix,
+                })),
+              }),
             });
+
+            if (validateResponse.ok) {
+              const { results } =
+                (await validateResponse.json()) as YahooBatchValidationResponse;
+
+              // Update symbolMap with validated Yahoo symbols
+              results.forEach((result, index) => {
+                const { isin } = tickersToValidate[index];
+                const existing = symbolMap.get(isin);
+                if (existing && result.validSymbol) {
+                  symbolMap.set(isin, {
+                    ...existing,
+                    yahooSymbol: result.validSymbol,
+                  });
+                }
+              });
+            }
+          } catch (validateError) {
+            // Yahoo validation failed, continue with default suffixes
+            console.warn('Yahoo validation failed:', validateError);
           }
-        } catch (validateError) {
-          // Yahoo validation failed, continue with default suffixes
-          console.warn('Yahoo validation failed:', validateError);
         }
       }
 
       setProgress(78);
 
-      // Step 3b: Validate TradingView symbols
-      setProgressMessage('Validating TradingView symbols...');
+      // Step 3b: Validate TradingView symbols (optional)
+      if (ENABLE_TRADINGVIEW_VALIDATION) {
+        setProgressMessage('Validating TradingView symbols...');
 
-      const tickersForTradingView = Array.from(symbolMap.entries())
-        .filter(([, resolved]) => resolved !== null)
-        .map(([isin, resolved]) => ({
-          isin,
-          ticker: resolved!.ticker,
-          preferredExchange: EXCHANGE_CODES[resolved!.exchCode] || 'SWB',
-        }));
+        const tickersForTradingView = Array.from(symbolMap.entries())
+          .filter(([, resolved]) => resolved !== null)
+          .map(([isin, resolved]) => ({
+            isin,
+            ticker: resolved!.ticker,
+            preferredExchange: EXCHANGE_CODES[resolved!.exchCode] || 'SWB',
+          }));
 
-      if (tickersForTradingView.length > 0) {
-        try {
-          const tvValidateResponse = await fetch('/api/validate-tradingview', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              symbols: tickersForTradingView.map((t) => ({
-                ticker: t.ticker,
-                preferredExchange: t.preferredExchange,
-              })),
-            }),
-          });
-
-          if (tvValidateResponse.ok) {
-            const { results } =
-              (await tvValidateResponse.json()) as TradingViewBatchValidationResponse;
-
-            // Update symbolMap with validated TradingView symbols
-            results.forEach((result, index) => {
-              const { isin } = tickersForTradingView[index];
-              const existing = symbolMap.get(isin);
-              if (existing && result.validSymbol) {
-                symbolMap.set(isin, {
-                  ...existing,
-                  tradingViewSymbol: result.validSymbol,
-                });
+        if (tickersForTradingView.length > 0) {
+          try {
+            const tvValidateResponse = await fetch(
+              '/api/validate-tradingview',
+              {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  symbols: tickersForTradingView.map((t) => ({
+                    ticker: t.ticker,
+                    preferredExchange: t.preferredExchange,
+                  })),
+                }),
               }
-            });
+            );
+
+            if (tvValidateResponse.ok) {
+              const { results } =
+                (await tvValidateResponse.json()) as TradingViewBatchValidationResponse;
+
+              // Update symbolMap with validated TradingView symbols
+              results.forEach((result, index) => {
+                const { isin } = tickersForTradingView[index];
+                const existing = symbolMap.get(isin);
+                if (existing && result.validSymbol) {
+                  symbolMap.set(isin, {
+                    ...existing,
+                    tradingViewSymbol: result.validSymbol,
+                  });
+                }
+              });
+            }
+          } catch (validateError) {
+            // TradingView validation failed, continue with default symbols
+            console.warn('TradingView validation failed:', validateError);
           }
-        } catch (validateError) {
-          // TradingView validation failed, continue with default symbols
-          console.warn('TradingView validation failed:', validateError);
         }
       }
 

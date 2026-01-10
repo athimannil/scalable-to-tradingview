@@ -87,7 +87,7 @@ describe('TradingView Symbol Validation', () => {
       expect(EXCHANGE_CODES['GR']).toBe('XETR');
       expect(EXCHANGE_CODES['GF']).toBe('FRA');
       expect(EXCHANGE_CODES['GM']).toBe('GETTEX');
-      expect(EXCHANGE_CODES['GS']).toBe('XSTU');
+      expect(EXCHANGE_CODES['GS']).toBe('SWB');
       expect(EXCHANGE_CODES['GH']).toBe('XHAM');
       expect(EXCHANGE_CODES['GT']).toBe('TRADEGATE');
     });

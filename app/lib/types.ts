@@ -88,6 +88,9 @@ export interface ResolvedSymbol {
   fullSymbol: string;
   yahooSymbol?: string; // Validated Yahoo Finance symbol (e.g., 'SAP.DE', 'SAP.F')
   tradingViewSymbol?: string; // Validated TradingView symbol (e.g., 'XETR:SAP', 'SWB:EWG2')
+  securityType?: string; // OpenFIGI security type (e.g., 'ETP', 'Common Stock', 'ETF')
+  securityType2?: string; // Additional security type from OpenFIGI
+  marketSector?: string; // Market sector from OpenFIGI (e.g., 'Equity', 'Commodity')
 }
 
 /**
@@ -179,7 +182,7 @@ export const EXCHANGE_CODES: Record<string, string> = {
   GR: 'XETR', // XETRA
   GT: 'TRADEGATE', // Tradegate
   GF: 'FRA', // Frankfurt floor (FWB)
-  GS: 'XSTU', // Stuttgart
+  GS: 'SWB', // Stuttgart (Börse Stuttgart / EUWAX)
   GH: 'XHAM', // Hamburg (low coverage)
   QT: 'QUOTRIX', // Quotrix (usually not on TradingView)
 } as const;
